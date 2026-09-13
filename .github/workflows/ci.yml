@@ -21,7 +21,7 @@ jobs:
     name: ${{ matrix.os }} / python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     permissions:
-      contents: write
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -63,14 +63,14 @@ jobs:
               print("   ", name, info.get("name"), info.get("version"))
           PY
 
-      - name: Locate the divergent stage (diagnostic, never fails the run)
+      # Reports the per-array digests of the feature path and the values of the
+      # two operations allowed to differ across platforms. It is what located
+      # the BLAS dot product in the L2 normalisation as the cause of the first
+      # failing run; it stays here because the next such divergence will need
+      # exactly this output.
+      - name: Report the feature path per array (diagnostic, never fails)
         continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ matrix.os }}-py${{ matrix.python-version }}
-        run: |
-          python examples/diagnose_platform.py tests/data/surrogate_tiny.npz | tee diag.txt
-          python .github/publish_diagnostic.py diag.txt "$TAG"
+        run: python examples/diagnose_platform.py tests/data/surrogate_tiny.npz
 
       - name: pytest
         run: python -m pytest tests -v
