@@ -61,6 +61,10 @@ jobs:
               print("   ", name, info.get("name"), info.get("version"))
           PY
 
+      - name: Locate the divergent stage (diagnostic, never fails the run)
+        continue-on-error: true
+        run: python examples/diagnose_platform.py tests/data/surrogate_tiny.npz
+
       - name: pytest
         run: python -m pytest tests -v
 
