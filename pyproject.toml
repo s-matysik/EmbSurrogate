@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "embsurrogate"
+dynamic = ["version"]
+description = "Deterministic, archivable surrogate of a text-embedding model fitted from (text, vector) pairs only"
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+requires-python = ">=3.11"
+authors = [{ name = "Sebastian Matysik" }]
+keywords = [
+    "text embeddings",
+    "model extraction",
+    "knowledge distillation",
+    "kernel ridge regression",
+    "feature hashing",
+    "reproducibility",
+    "bit-for-bit determinism",
+    "archival",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+
+# The archival inference path (features -> kernel -> prediction) runs on numpy
+# alone; this is deliberate, because every extra dependency is one more thing
+# that can disappear or change behaviour before the frozen model is read again.
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+# scipy is needed only to FIT a surrogate (sparse matrices, Cholesky, LAPACK
+# strtri) and to compute evaluation statistics — never to read a frozen model.
+train = ["scipy>=1.10"]
+test = ["pytest>=7.4", "scipy>=1.10"]
+# Full research pipeline: grid searches, teacher encoding, figures.
+experiments = [
+    "scipy>=1.10",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "matplotlib>=3.7",
+    "sentence-transformers>=2.2",
+]
+
+[project.scripts]
+embsurrogate-predict = "embsurrogate.predict:main"
+embsurrogate-replay-check = "embsurrogate.replay_check:main"
+embsurrogate-freeze = "embsurrogate.freeze:main"
+
+[project.urls]
+# Fill in before submission.
+Repository = "https://github.com/s-matysik/EmbSurrogate"
+
+[tool.setuptools.dynamic]
+version = { attr = "embsurrogate.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["embsurrogate*", "klon*"]
+
+[tool.pytest.ini_options]
+# Lets `pytest` run straight from a fresh clone, without `pip install -e .` first.
+pythonpath = ["src"]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning:klon"]

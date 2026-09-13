@@ -1,0 +1,45 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the software and the accompanying article."
+title: "embsurrogate: a deterministic, archivable surrogate of a text-embedding model"
+abstract: >-
+  embsurrogate reconstructs the text-to-vector map of a sentence-embedding model
+  from input/output pairs alone and freezes it into a single file whose inference
+  path depends on numpy only. Features are character 3-4-grams hashed with
+  SHA-256 into 2^18 buckets with sublinear tf-idf weights and L2 normalisation;
+  the estimator is kernel ridge regression in dual form with a tricube-weighted
+  correction of residuals whose neighbourhood is searched in the output space
+  after the first-stage prediction. The package targets the archival case: when
+  the teacher model version disappears, vectors for new texts can still be
+  computed deterministically from the frozen file. Measured fidelity on a fresh
+  test set of 1200 texts with 43093 training pairs: Spearman rho of pairwise
+  similarities 0.8075, median cosine to the teacher vector 0.8121, R-squared
+  0.5348, recall@10 0.4402.
+type: software
+version: "0.1.0"
+license: MIT
+authors:
+  - family-names: Matysik
+    given-names: Sebastian
+repository-code: "https://github.com/s-matysik/EmbSurrogate"
+url: "https://github.com/s-matysik/EmbSurrogate"
+doi: "<DOI>"
+keywords:
+  - text embeddings
+  - model extraction
+  - knowledge distillation
+  - kernel ridge regression
+  - feature hashing
+  - reproducibility
+  - bit-for-bit determinism
+  - archival
+preferred-citation:
+  type: article
+  title: >-
+    embsurrogate: a deterministic, archivable surrogate of a text-embedding
+    model fitted from input-output pairs
+  authors:
+    - family-names: Matysik
+      given-names: Sebastian
+  journal: SoftwareX
+  year: 2026
+  doi: "<DOI>"

@@ -1,0 +1,81 @@
+name: ci
+
+# The point of this workflow is not "do the tests pass" but "does the frozen
+# model produce the SAME vectors on a machine that did not build it". The
+# fixture in tests/data was built on macOS/arm64; the matrix below reads it back
+# on Linux/x86-64 and macOS with two interpreter versions and whatever numpy
+# wheel pip resolves, and compares the quantized vectors exactly.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  determinism:
+    name: ${{ matrix.os }} / python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.11", "3.12"]
+    env:
+      # Fixed thread count: a different BLAS blocking is one of the ways the
+      # last bits of a float64 sum can change, so it is pinned and reported.
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      PYTHONHASHSEED: "0"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the package and its test extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ".[test]"
+
+      - name: Report the environment that produced the numbers below
+        run: |
+          python - <<'PY'
+          import platform, sys
+          import numpy, scipy, unicodedata
+          print("os            ", platform.platform())
+          print("machine       ", platform.machine())
+          print("python        ", sys.version.replace("\n", " "))
+          print("numpy         ", numpy.__version__)
+          print("scipy         ", scipy.__version__)
+          print("unicodedata   ", unicodedata.unidata_version)
+          print("blas/lapack   ")
+          for name, info in (numpy.show_config(mode="dicts") or {}).get("Build Dependencies", {}).items():
+              print("   ", name, info.get("name"), info.get("version"))
+          PY
+
+      - name: pytest
+        run: python -m pytest tests -v
+
+      - name: Golden check on the frozen fixture (cross-platform bit-for-bit)
+        run: |
+          python -m embsurrogate.replay_check tests/data/surrogate_tiny.npz \
+            --probes tests/data/probes_tiny.jsonl \
+            --expected tests/data/expected_tiny.npy
+
+      - name: Golden check against the integer reference implementation
+        run: |
+          python -m embsurrogate.replay_check tests/data/surrogate_tiny.npz \
+            --probes tests/data/probes_tiny.jsonl \
+            --expected tests/data/expected_tiny.npy \
+            --reference --n-ref 20
+
+      - name: Legacy package name still resolves
+        run: python -W ignore::DeprecationWarning -c "import klon; print(klon.features.FEATURE_VERSION)"

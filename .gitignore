@@ -1,0 +1,38 @@
+# --- research data and heavy artefacts: never committed ------------------
+# The repository ships code plus ONE small frozen model used by the test
+# suite (tests/data/surrogate_tiny.npz). Corpora, teacher vectors, full-size
+# frozen models and experiment outputs stay outside version control.
+data/
+model/
+wyniki/
+results/
+*.npz
+!tests/data/*.npz
+*.npy
+!tests/data/*.npy
+*.jsonl
+!tests/data/*.jsonl
+*.tar.gz
+
+# --- python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+.venv/
+venv/
+.python-version
+
+# --- tooling --------------------------------------------------------------
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- editors / OS ---------------------------------------------------------
+.idea/
+.vscode/
+.DS_Store
