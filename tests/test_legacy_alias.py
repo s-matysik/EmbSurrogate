@@ -28,7 +28,7 @@ def test_alias_emits_deprecation_warning_and_forwards_modules():
     assert klon.predict is embsurrogate.predict
     assert klon.replay_check is embsurrogate.replay_check
     assert klon.__version__ == embsurrogate.__version__
-    assert klon.features.FEATURE_VERSION == "klon-features-2"
+    assert klon.features.FEATURE_VERSION == "klon-features-3"
 
 
 def test_lazy_attribute_forwarding():
@@ -41,7 +41,7 @@ def test_import_klon_features_from_a_clean_interpreter():
     code = "import klon; print(klon.features.FEATURE_VERSION)"
     out = subprocess.run([sys.executable, "-W", "ignore::DeprecationWarning", "-c", code],
                          capture_output=True, text=True, check=True)
-    assert out.stdout.strip() == "klon-features-2"
+    assert out.stdout.strip() == "klon-features-3"
 
 
 def test_run_module_through_the_alias():

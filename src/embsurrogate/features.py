@@ -19,6 +19,7 @@ The entire arithmetic is float64, and the only step dependent on summation order
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 import unicodedata
 from collections import Counter
@@ -31,7 +32,7 @@ import numpy as np
 
 # Changing anything below changes the feature space, and therefore the model.
 # The version is saved in the model file and checked on load.
-FEATURE_VERSION = "klon-features-2"
+FEATURE_VERSION = "klon-features-3"
 
 DEFAULT_CONFIG: dict = {
     "n_buckets": 1 << 18,          # 262144 buckets
@@ -45,6 +46,18 @@ DEFAULT_CONFIG: dict = {
     "sublinear_tf": True,          # 1 + log(tf) instead of raw tf
     "digit_folding": True,         # each digit -> '0'
     "max_chars": 20000,            # hard limit on input length
+    # Summation used by the L2 normalisation. "fsum" is correctly rounded
+    # (math.fsum): independent of the order of addition, hence identical on
+    # every IEEE-754 platform. "dot" is numpy's dot product, i.e. a BLAS call
+    # whose reduction order depends on the architecture and the thread count.
+    # Measured in CI across four operating-system/interpreter combinations:
+    # the "dot" path produced THREE different digests of the feature-value
+    # array (macOS 6c932cfb, Ubuntu 3.11 9f8ad920, Ubuntu 3.12 4fee5b61),
+    # while "fsum" produced one and the same row norm, 0x1.5e8d69687db1ep+6,
+    # on all of them. Models frozen before this change carry no such key and
+    # are read through the "dot" path, so they stay bit-reproducible on the
+    # architecture that produced them.
+    "norm_sum": "fsum",
 }
 
 _WORD_RE = re.compile(r"[^\W_]+", re.UNICODE)
@@ -162,15 +175,26 @@ def fit_idf(tf: sparse.csr_matrix, cfg: dict | None = None) -> np.ndarray:
     return np.log((1.0 + n_docs) / (1.0 + df)) + 1.0
 
 
-def apply_idf(tf: sparse.csr_matrix, idf: np.ndarray) -> sparse.csr_matrix:
-    """tf * idf + L2 row normalization. Empty rows remain zero."""
+def apply_idf(tf: "sparse.csr_matrix", idf: np.ndarray,
+              cfg: dict | None = None) -> "sparse.csr_matrix":
+    """tf * idf plus row-wise L2 normalisation. Empty rows stay zero.
+
+    Normalisation goes through `_row_norm`, the same code as the scipy-free
+    path in `csr_arrays`. It used to sum the squares with `multiply().sum()`,
+    a scipy reduction different from the one there, so the two paths could
+    disagree in their last bits.
+    """
     from scipy import sparse
+
     out = tf.copy()
     out.data = out.data * idf[out.indices]
-    norms = np.sqrt(np.asarray(out.multiply(out).sum(axis=1)).ravel())
-    norms[norms == 0.0] = 1.0
-    scale = sparse.diags(1.0 / norms)
-    return sparse.csr_matrix(scale @ out)
+    for i in range(out.shape[0]):
+        lo, hi = out.indptr[i], out.indptr[i + 1]
+        if hi > lo:
+            n = _row_norm(out.data[lo:hi], cfg)
+            if n > 0.0:
+                out.data[lo:hi] = out.data[lo:hi] / n
+    return out
 
 
 def transform(
@@ -201,6 +225,25 @@ def fit_transform(
     return transform(texts, idf, cfg), idf
 
 
+def _row_norm(val: np.ndarray, cfg: dict | None = None) -> float:
+    """L2 norm of one feature row, summed according to ``cfg["norm_sum"]``.
+
+    This was the only place on the feature path whose result depended on the
+    platform. ``val @ val`` goes through BLAS, where the reduction order
+    depends on the architecture (SIMD width) and on the number of threads.
+    ``math.fsum`` returns a correctly rounded sum, so it does not depend on the
+    order at all; the element-wise squaring before it is exactly rounded too,
+    which makes the whole quantity reproducible bit for bit across operating
+    systems and interpreters.
+    """
+    mode = (cfg or DEFAULT_CONFIG).get("norm_sum", "dot")
+    if mode == "fsum":
+        return math.sqrt(math.fsum(val * val))
+    if mode == "dot":                     # compatibility with feature version 2
+        return float(np.sqrt(float(val @ val)))
+    raise ValueError(f"unknown summation mode: {mode!r}")
+
+
 def csr_arrays(
     texts: Sequence[str], idf: np.ndarray, cfg: dict | None = None
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -217,7 +260,7 @@ def csr_arrays(
     for i, t in enumerate(texts):
         idx, val = hashed_row(t, cfg)
         val = val * idf[idx]
-        nrm = np.sqrt(float(val @ val))
+        nrm = _row_norm(val, cfg)
         if nrm > 0.0:
             val = val / nrm
         idx_parts.append(idx)

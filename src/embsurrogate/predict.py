@@ -32,6 +32,13 @@ from .freeze import unpack_strings
 
 DECIMALS = 6
 
+# The older feature format is still read, because its semantics are still
+# implemented exactly: version-2 models carry no "norm_sum" key, so
+# `features._row_norm` normalises them with the dot product, as at freezing
+# time. The version guard exists to prevent a SILENT change of results, not to
+# refuse a format we can still reproduce.
+SUPPORTED_FEATURE_VERSIONS = {"klon-features-2", "klon-features-3"}
+
 
 class FrozenSurrogate:
     """Loaded .npz file — ready for vector computation."""
@@ -39,10 +46,11 @@ class FrozenSurrogate:
     def __init__(self, path: pathlib.Path):
         z = np.load(path, allow_pickle=False)
         self.spec = json.loads(bytes(z["spec"]).decode("utf-8"))
-        if self.spec["feature_version"] != F.FEATURE_VERSION:
+        if self.spec["feature_version"] not in SUPPORTED_FEATURE_VERSIONS:
             raise RuntimeError(
                 f"model built on features {self.spec['feature_version']}, "
-                f"a kod ma {F.FEATURE_VERSION} — results would be inconsistent")
+                f"this code implements {sorted(SUPPORTED_FEATURE_VERSIONS)} "
+                f"— results would be inconsistent")
         self.cfg = self.spec["cfg"]
         self.cfg["char_ngrams"] = tuple(self.cfg["char_ngrams"])
         self.cfg["word_ngrams"] = tuple(self.cfg["word_ngrams"])

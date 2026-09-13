@@ -112,6 +112,6 @@ def test_scipy_and_numpy_paths_agree(idf):
 
 
 def test_config_fingerprint_stable():
-    assert F.FEATURE_VERSION == "klon-features-2"
+    assert F.FEATURE_VERSION == "klon-features-3"
     assert F.config_fingerprint(dict(F.DEFAULT_CONFIG)) == \
         F.config_fingerprint(dict(F.DEFAULT_CONFIG))

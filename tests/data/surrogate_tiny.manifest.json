@@ -1,15 +1,15 @@
 {
   "plik": "surrogate_tiny.npz",
-  "sha256_pliku": "93c22a85941213756c63a41ccb33b5927baa716c46ab18816ccbf3cb504e79fd",
+  "sha256_pliku": "5dfa523481c8c6d439e1ff0d993fbec455c8d02d4c8b9c09a38a3d5c2f3c8002",
   "sha256_tablic": {
     "idf": "b7c1d849948d875d57f2e03ef7687153465776a64bd6b49e7f2b18f4c8a88fe4",
     "Y": "eb5745c0eaecd278c793c14c90bbf5e3021722a244e9a0dc5d2860e6479046c7",
     "texts": "0c6aece1df9b4e42526897153c8a2bad5b566cd81b6ea01c8da07bc627952665",
     "ids": "b13ce445143748ad36431b8caabf4591dc70b92243dd2b6cfecbf5aa0978e982",
-    "alpha": "043301fc01bea0f33af6308152bb7cddc7d1f1971cd6f43ce53655227c8fecb2",
-    "R": "631a64b5b6fbcdbfa10ce719bd100572ae6e65526708e0f5bf050426940031cb",
-    "z": "50b2fe9f642bcf39c2beae6b334d7830ef3ea031325a028d0ccf16462cf709f9",
-    "spec": "11c758031fbb6543535fab78d259946e4d04e66e785cb881ce167c598bc59ea6"
+    "alpha": "a1fe74e9496a75e105fc2f09d7a107abb0bd94c11e9c2ad81d840492dfe111e2",
+    "R": "3c3fc802285d8d028a7b1f142bc9b3591a6cf96b4de848413c8eb1cc885b06aa",
+    "z": "b9472f62cc803f6bfcaea99427d8ca7304906ebefc32c4d2168bb16ca14114b6",
+    "spec": "faf9b956e0debff90c1d765523d11e465b48a48e8899d9c8ea595e443806f486"
   },
   "spec": {
     "format": "klon-surogat-2",
@@ -17,9 +17,9 @@
     "sha256_cech": {
       "indptr": "e9da51613d5a2ffab174819a8008a110e0918359145d1fbf8345d3c3751fd3a5",
       "indices": "1e6b5ee21929c2087de89ac5e7daf7e8c94dad49b3e299de6fe8a49643ab11a1",
-      "data": "43c17a08539dd694cb4d749670d71695b029d1b8234b8b9ccf350a5d9f99668b"
+      "data": "5a65999256d720b6a323fd24b382744827b92b267d069b2a942bbb83c5303160"
     },
-    "feature_version": "klon-features-2",
+    "feature_version": "klon-features-3",
     "cfg": {
       "n_buckets": 262144,
       "char_ngrams": [
@@ -29,9 +29,10 @@
       "word_ngrams": [],
       "sublinear_tf": true,
       "digit_folding": true,
-      "max_chars": 20000
+      "max_chars": 20000,
+      "norm_sum": "fsum"
     },
-    "cfg_fingerprint": "33f57595a7128132",
+    "cfg_fingerprint": "c119dbb89fc11ea0",
     "method": "hybrid_z",
     "params": {
       "lam": 0.0001,
@@ -40,12 +41,12 @@
     },
     "n_train": 900,
     "dim": 384,
-    "dataset": "data/ds_multi",
+    "dataset": "../data/ds_multi",
     "uklad": "first 900 pairs in file order = training pool; next 20 = control texts",
     "solver": "float64 Cholesky (training), float64 inference",
     "purpose": "test fixture: cross-platform bit-for-bit check"
   },
-  "zbudowano": "2026-09-13T15:33:57+00:00",
+  "zbudowano": "2026-09-13T22:37:03+00:00",
   "srodowisko": {
     "python": "3.12.14",
     "numpy": "2.5.3"
