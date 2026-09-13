@@ -20,6 +20,8 @@ jobs:
   determinism:
     name: ${{ matrix.os }} / python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -63,7 +65,12 @@ jobs:
 
       - name: Locate the divergent stage (diagnostic, never fails the run)
         continue-on-error: true
-        run: python examples/diagnose_platform.py tests/data/surrogate_tiny.npz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ matrix.os }}-py${{ matrix.python-version }}
+        run: |
+          python examples/diagnose_platform.py tests/data/surrogate_tiny.npz | tee diag.txt
+          python .github/publish_diagnostic.py diag.txt "$TAG"
 
       - name: pytest
         run: python -m pytest tests -v
