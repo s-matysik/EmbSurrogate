@@ -211,3 +211,44 @@ than the one that built it: see `.github/workflows/ci.yml` and
 * Changing the neighbour-selection key, the tricube formulation, or the order of
   the final normalisation and quantisation (normalise first, then round).
 * An interpreter with a different Unicode version, for non-ASCII text (A8).
+
+## Cross-platform verification, and the defect it found
+
+The claim that a frozen model returns the same vectors on a different machine
+was, until this repository had continuous integration, verified on one machine
+only. The first CI run -- Ubuntu and macOS, Python 3.11 and 3.12 -- failed on
+all four combinations, and the failure was real rather than a configuration
+problem.
+
+The diagnostic in `examples/diagnose_platform.py` separates the feature path
+into its three stored arrays and prints the values of the operations that IEEE
+754 permits to differ. Before the fix:
+
+| quantity | macOS 3.11 / 3.12 | Ubuntu 3.11 | Ubuntu 3.12 |
+|---|---|---|---|
+| `indptr`, `indices` (integer structure) | matches the frozen digest | matches | matches |
+| `data` (feature values) | `6c932cfb` | `9f8ad920` | `4fee5b61` |
+| `1 + log(2)` from the maths library | `0x1.b17217f7d1cf8p+0` | same | same |
+| row norm via dot product | `0x1.5e8d69687db1dp+6` | `0x1.5e8d69687db1ep+6` | `0x1.5e8d69687db1dp+6` |
+| row norm via `math.fsum` | `0x1.5e8d69687db1ep+6` | same | same |
+
+The frozen digest of `data` was `43c17a08`, matching none of the three. So
+neither Unicode normalisation (unicodedata 14.0 versus 15.0 across the matrix)
+nor the library logarithm was responsible: the divergence was a single
+reduction, `val @ val` in the L2 normalisation, which numpy dispatches to BLAS
+and whose summation order depends on the SIMD width and the thread count. The
+correctly rounded sum agrees on every platform, and it is now what the feature
+path uses (`features._row_norm`, feature version `klon-features-3`). The change
+moves feature values by at most 2.8e-17; after it, all four combinations
+reproduce the frozen digests exactly and the golden-vector checks pass.
+
+Two lessons generalise beyond this package. First, a reduction -- any dot
+product, `sum`, or norm -- must not appear on a path whose output is compared
+exactly; use a correctly rounded sum there, and keep the fast reduction for
+quantities that are later rounded away. Second, one machine cannot verify a
+claim of this kind: the defect had been present in every frozen model built
+before this run, and only a second architecture exposed it.
+
+Models frozen under feature version 2 carry no `norm_sum` key, are read through
+the dot-product path, and therefore remain bit-reproducible on the architecture
+that produced them; the loader accepts both versions for exactly that reason.
