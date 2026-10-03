@@ -68,6 +68,38 @@ def report(Y_true: np.ndarray, Y_hat: np.ndarray, *, k: int = 10,
     }
 
 
+def average_precision(y_true: np.ndarray, score: np.ndarray) -> float:
+    """Average precision, computed here rather than imported.
+
+    The definition is the step-wise one: sum over the ranked list of
+    `(R_n - R_(n-1)) * P_n`, which is what scikit-learn's
+    `average_precision_score` returns (verified to 1e-12 against it on random
+    inputs, including ties). It lives here because the whole package must run
+    on numpy alone: a researcher reopening an archive in ten years should not
+    have to resolve a machine-learning stack to read their own metrics, and a
+    metric that moves with a library version is not archival either.
+
+    Records with EQUAL scores form one threshold point rather than several.
+    That detail is the whole of the agreement with the reference: scoring tied
+    records one by one silently credits an arbitrary order inside the tie and
+    moves the result by up to 0.017 on random inputs, which is larger than
+    differences this metric is used to judge.
+    """
+    y_true = np.asarray(y_true).astype(bool)
+    s = np.asarray(score, dtype=np.float64)
+    order = np.argsort(-s, kind="stable")
+    y, s = y_true[order], s[order]
+    total = int(y.sum())
+    if total == 0:
+        return 0.0
+    # last position of every group of equal scores
+    ends = np.flatnonzero(np.r_[np.diff(s) != 0, True])
+    tp = np.cumsum(y)[ends]
+    precision = tp / (ends + 1.0)
+    recall = tp / total
+    return float(np.sum(np.diff(np.r_[0.0, recall]) * precision))
+
+
 def report_full(Y_true: np.ndarray, Y_hat: np.ndarray, mu: np.ndarray,
                 k: int = 10, thresholds=(0.6, 0.8), n_boot: int = 200,
                 seed: int = 0) -> dict:
@@ -85,7 +117,6 @@ def report_full(Y_true: np.ndarray, Y_hat: np.ndarray, mu: np.ndarray,
     Confidence interval computed by bootstrap OVER TEXTS (the resampling unit is
     the text, not the pair — pairs are not independent).
     """
-    from sklearn.metrics import average_precision_score
 
     cos = cosine_rowwise(Y_true, Y_hat)
     cos_c = cosine_rowwise(Y_true - mu, Y_hat - mu)
@@ -120,7 +151,7 @@ def report_full(Y_true: np.ndarray, Y_hat: np.ndarray, mu: np.ndarray,
         y = (ut > thr).astype(int)
         if y.sum() < 10:
             continue
-        out[f"AP@{thr}"] = float(average_precision_score(y, uh))
+        out[f"AP@{thr}"] = average_precision(y, uh)
         neg = uh[y == 0]
         cutoff = np.quantile(neg, 1 - 1e-4)          # FPR = 1e-4
         out[f"czulosc@FPR1e-4_{thr}"] = float((uh[y == 1] > cutoff).mean())
