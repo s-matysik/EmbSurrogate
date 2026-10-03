@@ -110,7 +110,54 @@ pip install ".[experiments]"
 ```
 
 From the repository root; the package is also importable from `src/` without
-installation (`PYTHONPATH=src`). The published source is at `https://github.com/s-matysik/EmbSurrogate`.
+installation (`PYTHONPATH=src`). The published source is at `<REPO_URL>`.
+
+## The workflow this package is for
+
+A researcher selects literature with an embedding model. Three years later the
+model version is gone and a reviewer asks for the selection to be reproduced,
+or extended by forty records. Four commands cover that:
+
+```bash
+# ONCE, while the model still exists: archive the pairs and fit the surrogate
+embsurrogate archive --texts corpus.jsonl --vectors vectors.npy --out bundle/
+
+# LATER, without the model: reproduce the vectors from the same raw data
+embsurrogate replay --bundle bundle/ --texts corpus.jsonl \
+    --out vectors.npy --provenance provenance.csv
+
+# turn vectors into a reading order, with baselines that use no model at all
+embsurrogate select --vectors vectors.npy --texts corpus.jsonl \
+    --seeds included.txt --labels decisions.csv --out selection/
+
+# check that the bundle still reproduces what it claims (what CI runs)
+embsurrogate verify --bundle bundle/ --strict
+```
+
+**The distinction that matters, and which `replay` never blurs.** For a record
+that was archived, the vector returned is the one the model produced, identical
+bit for bit — a lookup, not an approximation. If the raw data is the same, every
+vector is exact and the selection recomputed from them is the original
+selection; `replay` reports `"fully_reproducible": true` and the provenance file
+has zero `surrogate` rows. For a record that was *not* archived, the vector comes
+from the surrogate at the fidelity measured when the bundle was built and
+recorded in its manifest, and that record is marked `surrogate` in the
+provenance file. A reviewer can therefore check the claim instead of taking it.
+
+What the measured fidelity means in practice, on five Cochrane reviews from
+CLEF eHealth TAR 2019 (details in [docs/METHOD.md](docs/METHOD.md)):
+
+| screening, recall at a 10% reading budget | teacher model | surrogate | tf-idf, no model |
+|---|---|---|---|
+| ranked once by similarity | 0.437 | 0.516 | 0.557 |
+| the active loop this package runs | 0.637 | 0.671 | 0.691 |
+
+Two readings of that table, both honest. Replacing a lost model with the
+surrogate costs nothing measurable in a screening workflow — and the lexical
+baseline, which needs no model at all, is at least as good on these reviews.
+The baselines are computed inside `select` for exactly this reason: a tool
+should let you find out whether your embedding step earns its keep, not assume
+it does.
 
 ## Quick start
 
@@ -399,7 +446,7 @@ acceptance:
   journal = {SoftwareX},
   year    = {2026},
   doi     = {<DOI>},
-  url     = {https://github.com/s-matysik/EmbSurrogate}
+  url     = {<REPO_URL>}
 }
 ```
 

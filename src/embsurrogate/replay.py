@@ -1,0 +1,176 @@
+"""Reproduce vectors from a bundle, after the embedding model is gone.
+
+    embsurrogate replay --bundle bundle/ --texts corpus.jsonl \
+        --out vectors_replayed.npy --provenance provenance.csv
+
+Two cases, and the whole point of this module is that it never silently mixes
+them:
+
+* **the text was archived** -- the vector returned is the one the model
+  produced, read from the bundle, identical bit for bit. If the raw data is the
+  same, every vector is exact and any selection computed from them is exactly
+  the original selection. No approximation is involved and no fidelity caveat
+  applies.
+* **the text is new** -- the vector is produced by the surrogate, and the
+  fidelity measured when the bundle was built (recorded in its manifest) is what
+  you get. The record is marked as such in the provenance file.
+
+Matching is on the exact text after the same normalisation the features use, so
+a record that differs by a stray whitespace is treated as new rather than
+silently matched to a different text. The provenance file has one row per input
+record with `exact` or `surrogate`, which is the audit trail a reviewer can
+check: a replay that claims full reproducibility must have zero `surrogate`
+rows.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import pathlib
+import sys
+
+import numpy as np
+
+from . import archive as A
+from . import features as F
+from .freeze import unpack_strings
+
+
+class Bundle:
+    """An archive bundle: stored pairs plus the fitted surrogate."""
+
+    def __init__(self, path: pathlib.Path, verify: bool = True):
+        self.path = pathlib.Path(path)
+        self.manifest = json.loads((self.path / "manifest.json").read_text(
+            encoding="utf-8"))
+        if self.manifest.get("format") != A.BUNDLE_FORMAT:
+            raise SystemExit(f"unknown bundle format: {self.manifest.get('format')}")
+        fv = self.manifest["feature_version"]
+        from .predict import SUPPORTED_FEATURE_VERSIONS
+        if fv not in SUPPORTED_FEATURE_VERSIONS:
+            raise SystemExit(
+                f"bundle built on features {fv}, this code implements "
+                f"{sorted(SUPPORTED_FEATURE_VERSIONS)} — results would differ")
+        if verify:
+            for name in ("pairs.npz", "surrogate.npz"):
+                got = hashlib.sha256((self.path / name).read_bytes()).hexdigest()
+                if got != self.manifest["sha256"][name]:
+                    raise SystemExit(f"{name} does not match its checksum — "
+                                     "the bundle is damaged or was modified")
+        p = np.load(self.path / "pairs.npz", allow_pickle=False)
+        s = np.load(self.path / "surrogate.npz", allow_pickle=False)
+        self.ids = unpack_strings(p["ids"])
+        self.texts = unpack_strings(p["texts"])
+        self.Y = p["Y"]
+        self.idf, self.coef, self.R, self.z = s["idf"], s["coef"], s["R"], s["z"]
+        self.alpha_mix = float(s["alpha_mix"])
+        self.V = s["V"] if "V" in s.files else None
+        self.cfg = dict(F.DEFAULT_CONFIG)
+        for kk, vv in self.manifest["cfg"].items():
+            self.cfg[kk] = tuple(vv) if isinstance(vv, list) else vv
+        self.k = int(self.manifest["params"]["k"])
+        self._index = {F.normalize(t, self.cfg): i for i, t in enumerate(self.texts)}
+        self._X = None
+        self._table = None
+
+    # ------------------------------------------------------------------ utils
+
+    def _key(self, text: str) -> str:
+        """Matching key: the text after exactly the normalisation the features use.
+
+        Deliberately not a looser match. If a record differs from the archived
+        one by anything the featuriser can see, it is a different input and must
+        be marked as new, not quietly paired with a vector that belongs to a
+        different text.
+        """
+        return F.normalize(text, self.cfg)
+
+    @property
+    def X(self):
+        """Training-side n-gram features, recomputed from the archived texts."""
+        if self._X is None:
+            self._X = F.transform(self.texts, self.idf, self.cfg)
+        return self._X
+
+    def table(self):
+        if self._table is None and self.manifest.get("static_table"):
+            from .static_table import StaticTable
+            self._table = StaticTable(self.path / self.manifest["static_table"])
+        return self._table
+
+    @property
+    def fidelity(self) -> dict:
+        return self.manifest["fidelity_new_texts"]
+
+    # ------------------------------------------------------------- reproduce
+
+    def vectors_for(self, texts: list[str]) -> tuple[np.ndarray, list[str]]:
+        """Returns vectors and, per record, whether they are exact or surrogate."""
+        hits = [self._index.get(self._key(t)) for t in texts]
+        out = np.zeros((len(texts), self.Y.shape[1]))
+        prov = ["exact" if h is not None else "surrogate" for h in hits]
+        for i, h in enumerate(hits):
+            if h is not None:
+                out[i] = self.Y[h]
+        new = [i for i, h in enumerate(hits) if h is None]
+        if new:
+            yh = A.predict([texts[i] for i in new], self.idf, self.coef, self.R,
+                           self.z, self.X, self.V, self.cfg, self.alpha_mix,
+                           self.k, self.table())
+            out[new] = yh
+        return out, prov
+
+
+def run(bundle: pathlib.Path, texts_path: pathlib.Path, out: pathlib.Path,
+        provenance: pathlib.Path | None = None, decimals: int | None = 6) -> dict:
+    b = Bundle(bundle)
+    ids, texts = A.read_texts(texts_path)
+    Y, prov = b.vectors_for(texts)
+    if decimals is not None:
+        Y = np.round(Y, decimals)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    np.save(out, Y)
+    n_exact = prov.count("exact")
+    if provenance is not None:
+        import csv
+        with provenance.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            w.writerow(["id", "source"])
+            for i, p in zip(ids, prov):
+                w.writerow([i, p])
+    report = {
+        "records": len(texts),
+        "exact": n_exact,
+        "surrogate": len(texts) - n_exact,
+        "fully_reproducible": n_exact == len(texts),
+        "vector_sha256": hashlib.sha256(
+            np.ascontiguousarray(Y).tobytes()).hexdigest(),
+        "fidelity_for_new_texts": {
+            kk: round(float(vv), 4) for kk, vv in b.fidelity.items()
+            if kk in ("rho_globalne", "cos_mediana", "recall@10", "R2")},
+        "bundle": {"n_pairs": b.manifest["n_pairs"],
+                   "teacher": b.manifest.get("teacher", ""),
+                   "feature_version": b.manifest["feature_version"]},
+    }
+    return report
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(prog="embsurrogate replay")
+    ap.add_argument("--bundle", type=pathlib.Path, required=True)
+    ap.add_argument("--texts", type=pathlib.Path, required=True)
+    ap.add_argument("--out", type=pathlib.Path, required=True)
+    ap.add_argument("--provenance", type=pathlib.Path, default=None)
+    ap.add_argument("--raw", action="store_true",
+                    help="write raw float64 instead of values rounded to 6 places")
+    a = ap.parse_args(argv)
+    rep = run(a.bundle, a.texts, a.out, a.provenance,
+              decimals=None if a.raw else 6)
+    print(json.dumps(rep, indent=2, ensure_ascii=False))
+    return 0 if rep["records"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

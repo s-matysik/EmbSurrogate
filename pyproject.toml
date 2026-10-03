@@ -37,6 +37,8 @@ classifiers = [
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
+# Only needed to DISTIL a static token table (archiving time, model present).
+table = ["sentence-transformers>=2.2", "transformers>=4.30"]
 # scipy is needed only to FIT a surrogate (sparse matrices, Cholesky, LAPACK
 # strtri) and to compute evaluation statistics — never to read a frozen model.
 train = ["scipy>=1.10"]
@@ -51,13 +53,14 @@ experiments = [
 ]
 
 [project.scripts]
+embsurrogate = "embsurrogate.cli:main"
 embsurrogate-predict = "embsurrogate.predict:main"
 embsurrogate-replay-check = "embsurrogate.replay_check:main"
 embsurrogate-freeze = "embsurrogate.freeze:main"
 
 [project.urls]
 # Fill in before submission.
-Repository = "https://github.com/s-matysik/EmbSurrogate"
+Repository = "<REPO_URL>"
 
 [tool.setuptools.dynamic]
 version = { attr = "embsurrogate.__version__" }
