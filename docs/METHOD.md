@@ -219,3 +219,59 @@ configuration: `probe_table.py` (query the teacher with *single words* to read
 its static table directly, then pool — the Model2Vec-style construction, here
 built from input/output pairs only) and `product_kernel.py` /
 `regularisation.py` (product kernels and alternative regularisation sweeps).
+
+## Size of the artefact
+
+A deposit a repository will not accept is not a deposit, so the size of the
+bundle is a property of the method, not a packaging detail. The first bundle
+format was 558 MB for 43,093 pairs, of which 529 MB sat in four float64 arrays:
+teacher vectors, dual coefficients, residuals, out-of-sample coordinates.
+
+| change | saving | cost |
+|---|---|---|
+| residuals not stored (`R = lam N a` for a solved system) | 132 MB | none; exact in closed form, 1.7e-5 iterative |
+| vectors as `int32` at the archival unit of 1e-6 | 66 MB | none; that precision is the contract already |
+| coefficients `float32`, coordinates `float16` | 165 MB | none measurable (see below) |
+| texts compressed | 15 MB | none |
+| vectors linked to the deposit instead of copied | 48 MB | `replay` then needs `--vectors` |
+
+The third row is the one that had to be measured rather than argued. On the
+43,093-pair model, every fidelity metric is identical to four decimals before
+and after:
+
+| stored as | rho | median cos | R2 | recall@10 | size |
+|---|---|---|---|---|---|
+| float64, residuals in file | 0.8075 | 0.8121 | 0.5348 | 0.4402 | 558 MB |
+| residuals derived | 0.8075 | 0.8121 | 0.5348 | 0.4402 | 426 MB |
+| + coefficients and coordinates float32 | 0.8075 | 0.8121 | 0.5348 | 0.4402 | 226 MB |
+| + coordinates float16 | 0.8075 | 0.8121 | 0.5348 | 0.4403 | 193 MB |
+| + coefficients float16 | 0.8075 | 0.8121 | 0.5348 | 0.4403 | 160 MB |
+
+float16 coefficients cost nothing either, which is why the default is float32
+rather than float16: the conservative choice is free at this scale, and the
+measurement says the aggressive one would also have been safe. The prediction
+is a weighted sum over tens of thousands of archived vectors, so per-coefficient
+rounding averages out; rho is additionally a rank statistic.
+
+What this means in practice, for the review corpus of 3,345 Cochrane records:
+
+| artefact | size |
+|---|---|
+| `all-MiniLM-L6-v2` checkpoint (the lightest usable encoder) | 87 MB |
+| `allenai-specter` checkpoint (encoder for scholarly text) | 420 MB |
+| teacher vectors alone | 10.3 MB |
+| self-contained bundle | 14.4 MB |
+| bundle with vectors linked to the deposit | 10.6 MB |
+
+The bundle is about 1.4x the vector deposit and roughly an order of magnitude
+smaller than the lightest model that could have produced it. That ratio is the
+reason to deposit a surrogate rather than a checkpoint, and it does not depend
+on any fidelity claim.
+
+### A fixed overhead worth knowing about
+
+The bucket weights (`idf`) are 2^18 float32 values, about 1 MB, regardless of
+corpus size. For a 43,093-pair bundle that is 0.6% of the file; for a
+300-record bundle it is a third of it. The weights are rounded to float32
+*before* fitting, so the coefficients are not fitted against one precision and
+replayed against another.
