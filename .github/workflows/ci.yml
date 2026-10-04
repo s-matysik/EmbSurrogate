@@ -72,6 +72,36 @@ jobs:
         continue-on-error: true
         run: python examples/diagnose_platform.py tests/data/surrogate_tiny.npz
 
+      - name: "pytest test_average_precision.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_average_precision.py -q
+      - name: "pytest test_bundle_roundtrip.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_bundle_roundtrip.py -q
+      - name: "pytest test_bundle_size.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_bundle_size.py -q
+      - name: "pytest test_features_determinism.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_features_determinism.py -q
+      - name: "pytest test_golden_tiny.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_golden_tiny.py -q
+      - name: "pytest test_legacy_alias.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_legacy_alias.py -q
+      - name: "pytest test_neighbour_ties.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_neighbour_ties.py -q
+      - name: "pytest test_norm_summation.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_norm_summation.py -q
+      - name: "pytest test_reference_agreement.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_reference_agreement.py -q
+      - name: "pytest test_select_determinism.py"
+        continue-on-error: true
+        run: python -m pytest tests/test_select_determinism.py -q
       - name: pytest
         run: python -m pytest tests -v
 
