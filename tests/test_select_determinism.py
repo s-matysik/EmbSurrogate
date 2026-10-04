@@ -81,3 +81,35 @@ def test_no_scikit_learn_import():
     src = open(m.__file__, encoding="utf-8").read()
     assert "sklearn" not in src and "scikit" not in src.replace(
         "scikit-learn's", "")
+
+
+def test_the_whole_user_path_imports_on_numpy_and_scipy_alone():
+    """No pandas, no matplotlib, no scikit-learn, no torch on any used path.
+
+    This is the claim the paper makes about deposit-sized dependencies, and it
+    is easy to break by one convenience import: CI caught exactly that when the
+    large-fit path reached the solver through a module that imported pandas for
+    its result tables.
+    """
+    import importlib.abc
+    import subprocess
+    import sys
+    import textwrap
+
+    code = textwrap.dedent('''
+        import sys, importlib.abc
+        HEAVY = ("pandas", "matplotlib", "sklearn", "torch",
+                 "sentence_transformers", "transformers")
+        class Block(importlib.abc.MetaPathFinder):
+            def find_spec(self, name, path=None, target=None):
+                if name.split(".")[0] in HEAVY:
+                    raise ModuleNotFoundError(name, name=name)
+                return None
+        sys.meta_path.insert(0, Block())
+        from embsurrogate import (archive, cli, predict, reference, replay,
+                                  replay_check, select, verify)
+        from embsurrogate.run_primal import dual_cg, oof_coordinates
+        print("ok")
+    ''')
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert r.returncode == 0 and "ok" in r.stdout, r.stderr[-900:]

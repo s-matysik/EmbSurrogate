@@ -32,8 +32,6 @@ from . import dual as D
 from . import evaluate as E
 from . import features as F
 from . import freeze as FZ
-from .run_big import indices
-from .run_experiment import load_dataset
 
 
 def dual_cg(X, Y, lam: float, tol: float = 1e-4, max_iter: int = 200,
@@ -88,6 +86,14 @@ def oof_coordinates(X, Y, lam: float, folds: int = 4, tol: float = 1e-4,
 
 
 def main(argv=None) -> int:
+    # `run_experiment` pulls in pandas for its result tables; the solver itself
+    # needs numpy only, and `archive` imports this module for large fits. Keeping
+    # the heavy import inside the command-line entry point is what lets the
+    # package be installed with numpy and scipy alone -- which is the whole
+    # argument of the paper, and was caught by CI rather than by inspection.
+    from .run_big import indices
+    from .run_experiment import load_dataset
+
     ap = argparse.ArgumentParser()
     ap.add_argument("dataset", type=pathlib.Path)
     ap.add_argument("out_model", type=pathlib.Path)
