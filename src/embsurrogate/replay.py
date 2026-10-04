@@ -41,7 +41,8 @@ from .freeze import unpack_strings
 class Bundle:
     """An archive bundle: stored pairs plus the fitted surrogate."""
 
-    def __init__(self, path: pathlib.Path, verify: bool = True):
+    def __init__(self, path: pathlib.Path, verify: bool = True,
+                 vectors: pathlib.Path | None = None):
         self.path = pathlib.Path(path)
         self.manifest = json.loads((self.path / "manifest.json").read_text(
             encoding="utf-8"))
@@ -63,10 +64,30 @@ class Bundle:
         s = np.load(self.path / "surrogate.npz", allow_pickle=False)
         self.ids = unpack_strings(p["ids"])
         self.texts = unpack_strings(p["texts"])
-        self.Y = p["Y"]
-        self.idf, self.coef, self.R, self.z = s["idf"], s["coef"], s["R"], s["z"]
+        # Vectors are stored as integers at the archival unit, or linked by
+        # checksum to the deposit. Either way they are converted here and used
+        # only for exact lookups; the prediction path does not touch them.
+        if "Y_micro" in p.files:
+            self.Y = p["Y_micro"].astype(np.float64) / 1e6
+        elif vectors is not None:
+            Yl = np.load(vectors).astype(np.float64)
+            got = hashlib.sha256(np.ascontiguousarray(
+                np.round(Yl * 1e6).astype(np.int32)).tobytes()).hexdigest()
+            if got != self.manifest["sha256"]["vectors"]:
+                raise SystemExit("the supplied vector file is not the one this "
+                                 "bundle was built from (checksum differs)")
+            self.Y = np.round(Yl, 6)
+        else:
+            raise SystemExit(
+                "this bundle links its vectors instead of storing them; pass "
+                "--vectors with the file named in the manifest")
+        self.idf = s["idf"].astype(np.float64)
+        self.coef = s["coef"].astype(np.float64)
+        self.z = s["z"].astype(np.float64)
+        # residuals are a scalar multiple of the coefficients for a solved system
+        self.R = float(s["lam_N"]) * self.coef
         self.alpha_mix = float(s["alpha_mix"])
-        self.V = s["V"] if "V" in s.files else None
+        self.V = s["V"].astype(np.float64) if "V" in s.files else None
         self.cfg = dict(F.DEFAULT_CONFIG)
         for kk, vv in self.manifest["cfg"].items():
             self.cfg[kk] = tuple(vv) if isinstance(vv, list) else vv
@@ -124,8 +145,9 @@ class Bundle:
 
 
 def run(bundle: pathlib.Path, texts_path: pathlib.Path, out: pathlib.Path,
-        provenance: pathlib.Path | None = None, decimals: int | None = 6) -> dict:
-    b = Bundle(bundle)
+        provenance: pathlib.Path | None = None, decimals: int | None = 6,
+        vectors: pathlib.Path | None = None) -> dict:
+    b = Bundle(bundle, vectors=vectors)
     ids, texts = A.read_texts(texts_path)
     Y, prov = b.vectors_for(texts)
     if decimals is not None:
@@ -163,11 +185,14 @@ def main(argv=None) -> int:
     ap.add_argument("--texts", type=pathlib.Path, required=True)
     ap.add_argument("--out", type=pathlib.Path, required=True)
     ap.add_argument("--provenance", type=pathlib.Path, default=None)
+    ap.add_argument("--vectors", type=pathlib.Path, default=None,
+                    help="the deposited vector file, for a bundle that links "
+                         "its vectors rather than storing them")
     ap.add_argument("--raw", action="store_true",
                     help="write raw float64 instead of values rounded to 6 places")
     a = ap.parse_args(argv)
     rep = run(a.bundle, a.texts, a.out, a.provenance,
-              decimals=None if a.raw else 6)
+              decimals=None if a.raw else 6, vectors=a.vectors)
     print(json.dumps(rep, indent=2, ensure_ascii=False))
     return 0 if rep["records"] else 1
 

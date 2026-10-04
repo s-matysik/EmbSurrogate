@@ -46,17 +46,23 @@ def check(bundle: pathlib.Path, strict: bool = False, sample: int = 64) -> dict:
         "\u0000".join(b.texts).encode("utf-8")).hexdigest()
     out["checks"]["texts_intact"] = man_texts == b.manifest["sha256"]["texts"]
 
-    # features recomputed here must agree with the archived vectors' own
-    # featurisation; a platform difference shows up as a changed digest
+    # Features recomputed HERE must match the digests recorded when the bundle
+    # was built. This is the strongest check in the file: it is what failed on
+    # Linux while passing on the machine that built the fixture, and it located
+    # a reduction whose summation order depends on the architecture.
+    dig = b.manifest.get("feature_digest")
+    if dig:
+        got = dict(zip(("indptr", "indices", "data"),
+                       (hashlib.sha256(np.ascontiguousarray(x).tobytes()).hexdigest()
+                        for x in F.csr_arrays(b.texts, b.idf, b.cfg))))
+        out["checks"]["features_match_build_time_digests"] = got == dig
+        out["feature_digest_mismatch"] = [kk for kk in dig if got[kk] != dig[kk]]
     idx = np.linspace(0, len(b.texts) - 1, min(sample, len(b.texts))).astype(int)
     sub = [b.texts[i] for i in idx]
     indptr, indices, data = F.csr_arrays(sub, b.idf, b.cfg)
     Xs = F.transform(sub, b.idf, b.cfg)
     out["checks"]["numpy_and_scipy_paths_agree"] = bool(
-        np.array_equal(indices, Xs.indices) and np.allclose(data, Xs.data, atol=0,
-                                                            rtol=0))
-    out["feature_digest"] = hashlib.sha256(
-        np.ascontiguousarray(data).tobytes()).hexdigest()[:16]
+        np.array_equal(indices, Xs.indices) and np.array_equal(data, Xs.data))
 
     # the exactness claim: archived texts return the archived vectors
     Y, prov = b.vectors_for(sub)
