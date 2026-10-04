@@ -231,13 +231,14 @@ teacher vectors, dual coefficients, residuals, out-of-sample coordinates.
 |---|---|---|
 | residuals not stored (`R = lam N a` for a solved system) | 132 MB | none; exact in closed form, 1.7e-5 iterative |
 | vectors as `int32` at the archival unit of 1e-6 | 66 MB | none; that precision is the contract already |
-| coefficients `float32`, coordinates `float16` | 165 MB | none measurable (see below) |
+| coefficients `float32`, coordinates `float16` | 165 MB | rho, cos and R2 unchanged; recall@10 +0.0001 (see below) |
 | texts compressed | 15 MB | none |
 | vectors linked to the deposit instead of copied | 48 MB | `replay` then needs `--vectors` |
 
 The third row is the one that had to be measured rather than argued. On the
-43,093-pair model, every fidelity metric is identical to four decimals before
-and after:
+43,093-pair model rho, the median cosine and R2 are identical to four decimals
+across all five variants; recall@10 moves by one unit in the fourth decimal
+once the coordinates are stored in float16, which includes the default:
 
 | stored as | rho | median cos | R2 | recall@10 | size |
 |---|---|---|---|---|---|
@@ -247,9 +248,9 @@ and after:
 | + coordinates float16 | 0.8075 | 0.8121 | 0.5348 | 0.4403 | 193 MB |
 | + coefficients float16 | 0.8075 | 0.8121 | 0.5348 | 0.4403 | 160 MB |
 
-float16 coefficients cost nothing either, which is why the default is float32
-rather than float16: the conservative choice is free at this scale, and the
-measurement says the aggressive one would also have been safe. The prediction
+float16 coefficients add nothing to that 0.0001, which is why the default is
+float32 rather than float16: the conservative choice is free at this scale, and
+the measurement says the aggressive one would also have been safe. The prediction
 is a weighted sum over tens of thousands of archived vectors, so per-coefficient
 rounding averages out; rho is additionally a rank statistic.
 
