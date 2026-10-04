@@ -103,7 +103,19 @@ jobs:
         continue-on-error: true
         run: python -m pytest tests/test_select_determinism.py -q
       - name: pytest
-        run: python -m pytest tests -v
+        run: |
+          set +e
+          python -m pytest tests -v > pytest.out 2>&1
+          code=$?
+          tail -60 pytest.out
+          if [ $code -ne 0 ]; then
+            # The job log lives on a blob host that the development sandbox
+            # cannot reach, so the failure summary is emitted as workflow
+            # annotations, which are readable through the API.
+            grep -E "^(FAILED|ERROR)|^E  |assert" pytest.out | head -25 \
+              | while IFS= read -r line; do echo "::error::$line"; done
+          fi
+          exit $code
 
       - name: Golden check on the frozen fixture (cross-platform bit-for-bit)
         run: |
