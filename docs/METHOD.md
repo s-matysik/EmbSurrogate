@@ -109,7 +109,10 @@ Two design decisions carry the result.
 **The neighbourhood is searched after the first stage, in the output space.** In
 n-gram space the cosine between two unrelated texts is typically 0.2–0.3, so a
 `k`-neighbourhood there is mostly noise; after the ridge stage, neighbours sit
-at cosine 0.6–0.8. Measured effect on the fresh test set: global rho rises from
+at cosine 0.6–0.8. The mechanism: texts the first stage maps close together are
+texts on which it makes a similar mistake, so their residuals carry information
+about the mistake being made on the new text. Proximity in feature space does
+not imply that. Measured effect on the fresh test set: global rho rises from
 0.7808 (`ridge`) to 0.8075 (`hybrid_z`), and recall@10 from 0.4217 to 0.4402.
 
 **The training coordinates must be leave-one-out.** `e_i = alpha_i / (G^{-1})_ii`
