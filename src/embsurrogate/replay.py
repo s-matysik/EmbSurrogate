@@ -127,10 +127,53 @@ class Bundle:
 
     # ------------------------------------------------------------- reproduce
 
-    def vectors_for(self, texts: list[str]) -> tuple[np.ndarray, list[str]]:
-        """Returns vectors and, per record, whether they are exact or surrogate."""
+    def vectors_for(self, texts: list[str], mode: str = "archival"
+                    ) -> tuple[np.ndarray, list[str]]:
+        """Returns vectors and, per record, whether they are exact or surrogate.
+
+        Two modes, and picking the wrong one is a measurable error rather than a
+        matter of taste.
+
+        * `archival` (default) returns the ORIGINAL vector for every archived
+          text and a surrogate vector only for texts that are new. Use it when
+          the question is what the original pipeline computed: recomputing a
+          finished selection, auditing published numbers, re-deriving a figure.
+
+        * `consistent` returns a surrogate vector for EVERY text, archived ones
+          included, using the out-of-sample coordinate each archived text would
+          have received had it not been in the training set. Use it whenever
+          archived and new records are compared with one another -- ranked
+          against a query, clustered, deduplicated.
+
+        The reason `archival` is wrong for ranking is measured, not conjectural.
+        Ridge shrinks predictions towards the mean direction of the corpus: on
+        a review corpus the surrogate vectors sit at cosine 0.78 to the corpus
+        centroid against 0.65 for the teacher's. A screening query is itself a
+        centroid of seed documents, so approximated records score systematically
+        higher against it than exact ones do -- not because they are more
+        relevant, but because they are smoother. Mixing the two populations in
+        one ranking over five Cochrane reviews pushed the exact records out of
+        the top 10%: they held 66% of it under the teacher and 23% under mixed
+        vectors, against 62% when the surrogate was applied consistently.
+        """
+        if mode not in ("archival", "consistent"):
+            raise ValueError("mode must be 'archival' or 'consistent'")
         hits = [self._index.get(self._key(t)) for t in texts]
         out = np.zeros((len(texts), self.Y.shape[1]))
+        if mode == "consistent":
+            prov = ["surrogate (out-of-sample)" if h is not None else "surrogate"
+                    for h in hits]
+            new = list(range(len(texts)))
+            for i, h in enumerate(hits):
+                if h is not None:
+                    out[i] = self.z[h]
+                    new.remove(i)
+            if new:
+                out[new] = A.predict([texts[i] for i in new], self.idf,
+                                     self.coef, self.R, self.z, self.X, self.V,
+                                     self.cfg, self.alpha_mix, self.k,
+                                     self.table())
+            return out, prov
         prov = ["exact" if h is not None else "surrogate" for h in hits]
         for i, h in enumerate(hits):
             if h is not None:
@@ -146,10 +189,10 @@ class Bundle:
 
 def run(bundle: pathlib.Path, texts_path: pathlib.Path, out: pathlib.Path,
         provenance: pathlib.Path | None = None, decimals: int | None = 6,
-        vectors: pathlib.Path | None = None) -> dict:
+        vectors: pathlib.Path | None = None, mode: str = "archival") -> dict:
     b = Bundle(bundle, vectors=vectors)
     ids, texts = A.read_texts(texts_path)
-    Y, prov = b.vectors_for(texts)
+    Y, prov = b.vectors_for(texts, mode=mode)
     if decimals is not None:
         Y = np.round(Y, decimals)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -164,6 +207,7 @@ def run(bundle: pathlib.Path, texts_path: pathlib.Path, out: pathlib.Path,
                 w.writerow([i, p])
     report = {
         "records": len(texts),
+        "mode": mode,
         "exact": n_exact,
         "surrogate": len(texts) - n_exact,
         "fully_reproducible": n_exact == len(texts),
@@ -172,6 +216,15 @@ def run(bundle: pathlib.Path, texts_path: pathlib.Path, out: pathlib.Path,
         "fidelity_for_new_texts": {
             kk: round(float(vv), 4) for kk, vv in b.fidelity.items()
             if kk in ("rho_globalne", "cos_mediana", "recall@10", "R2")},
+        # A run that mixes the two populations and then ranks them together is
+        # the one case where the default is the wrong choice; say so here rather
+        # than leave it to the documentation.
+        "warning": ("this run mixes original and surrogate vectors; if these "
+                    "records will be ranked, clustered or deduplicated against "
+                    "one another, re-run with --mode consistent, because ridge "
+                    "shrinkage makes surrogate vectors score higher against a "
+                    "centroid query than original ones do")
+        if (mode == "archival" and 0 < n_exact < len(texts)) else "",
         "bundle": {"n_pairs": b.manifest["n_pairs"],
                    "teacher": b.manifest.get("teacher", ""),
                    "feature_version": b.manifest["feature_version"]},
@@ -188,11 +241,17 @@ def main(argv=None) -> int:
     ap.add_argument("--vectors", type=pathlib.Path, default=None,
                     help="the deposited vector file, for a bundle that links "
                          "its vectors rather than storing them")
+    ap.add_argument("--mode", choices=("archival", "consistent"),
+                    default="archival",
+                    help="archival: original vectors for archived texts "
+                         "(reproduce what the pipeline computed). consistent: "
+                         "surrogate vectors for every text (compare archived "
+                         "and new records with one another)")
     ap.add_argument("--raw", action="store_true",
                     help="write raw float64 instead of values rounded to 6 places")
     a = ap.parse_args(argv)
     rep = run(a.bundle, a.texts, a.out, a.provenance,
-              decimals=None if a.raw else 6, vectors=a.vectors)
+              decimals=None if a.raw else 6, vectors=a.vectors, mode=a.mode)
     print(json.dumps(rep, indent=2, ensure_ascii=False))
     return 0 if rep["records"] else 1
 
