@@ -1,6 +1,7 @@
 """Command line for the whole workflow.
 
     embsurrogate archive  --texts corpus.jsonl --vectors vectors.npy --out bundle/
+    embsurrogate deposit  --bundle bundle/ --out deposit/ --encoder <model id>
     embsurrogate replay   --bundle bundle/ --texts corpus.jsonl --out vectors.npy
     embsurrogate select   --vectors vectors.npy --texts corpus.jsonl --seeds seeds.txt
     embsurrogate verify   --bundle bundle/
@@ -22,7 +23,7 @@ import sys
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     cmds = {"archive": "archive", "replay": "replay", "select": "select",
-            "verify": "verify"}
+            "verify": "verify", "deposit": "deposit"}
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__.strip())
         return 0 if argv else 2
