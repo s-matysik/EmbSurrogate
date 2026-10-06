@@ -354,6 +354,30 @@ full-size frozen models (`model/`, 330–560 MB each) and experiment outputs
 holds the repository under 20 MB. `.gitignore` encodes this rule, with an
 exception for the small fixture under `tests/data/`.
 
+## A deposit for a corpus you may not redistribute
+
+Abstracts from the major bibliographic databases are under publisher copyright,
+so a bundle that stores them cannot be deposited. `deposit` writes the form that
+can:
+
+```
+embsurrogate deposit --bundle bundle/ --out deposit/ --encoder <model id>
+```
+
+It stores record identifiers, a SHA-256 digest of each normalised text as a
+version check, the teacher vectors, and one matrix `W` of encoder dimension by
+teacher dimension -- 512 x 384, that is 0.8 MB whatever the corpus size. No
+source text is present; whoever reproduces the selection fetches the abstracts
+from the licensed source under their own entitlement and is told by the digest
+whether they hold the same version of each record.
+
+Measured on 8,000 pairs, the text-free form is also the more faithful one: rank
+correlation 0.8006 for `W` alone and 0.8105 with the residual correction,
+against 0.7711 for the n-gram route that needs the texts, at 13.3 MB against
+36.7 MB. The price is the determinism contract, which this route is outside of:
+it calls a named neural encoder at replay time. Deposit the bundle too when the
+licence allows the texts; deposit this one when it does not.
+
 ## Determinism and testing
 
 The claim under test is narrow and falsifiable: *for a given frozen model and a
