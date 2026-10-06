@@ -76,8 +76,9 @@ def test_new_records_are_flagged_not_hidden(bundle, corpus):
     assert rep["exact"] == corpus["n"] and rep["surrogate"] == 5
     assert rep["fully_reproducible"] is False
     rows = prov.read_text(encoding="utf-8").strip().splitlines()
-    assert rows[0] == "id,source"
+    assert rows[0] == "id,source,route"
     assert [r.split(",")[1] for r in rows[1:]][-5:] == ["surrogate"] * 5
+    assert {r.split(",")[2] for r in rows[1:]} == {"stored", "n-gram"}
 
 
 def test_a_modified_text_is_treated_as_new(bundle, corpus):

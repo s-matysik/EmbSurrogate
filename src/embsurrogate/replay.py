@@ -95,6 +95,12 @@ class Bundle:
         self._index = {F.normalize(t, self.cfg): i for i, t in enumerate(self.texts)}
         self._X = None
         self._table = None
+        self._bridge = None
+        # Which route produced the surrogate vectors of the LAST call. One run
+        # uses one route for every new text, so this belongs to the run rather
+        # than to the record, and the provenance file repeats it per row only
+        # for the convenience of whoever reads that file alone.
+        self._route = "stored"
 
     # ------------------------------------------------------------------ utils
 
@@ -114,6 +120,35 @@ class Bundle:
         if self._X is None:
             self._X = F.transform(self.texts, self.idf, self.cfg)
         return self._X
+
+    def bridge(self):
+        """Encoder route, if the bundle carries one AND the encoder loads.
+
+        Deliberately silent on failure: a bundle must stay readable on a machine
+        where the named model cannot be fetched, which is the situation the
+        package exists for. The caller learns which route ran from the
+        provenance file, never by having to guess.
+        """
+        if self._bridge == "none":
+            return None
+        if self._bridge is None:
+            spec = (self.manifest.get("bridge") or {}).get("encoder")
+            f = self.path / "bridge.npz"
+            if not spec or spec == "callable" or not f.exists():
+                self._bridge = "none"
+                return None
+            try:
+                enc = A.encoder_fn(spec)
+            except Exception:
+                self._bridge = "none"
+                return None
+            s = np.load(f, allow_pickle=False)
+            self._bridge = ({"coef": s["coef"].astype(np.float64),
+                             "z": s["z"].astype(np.float64),
+                             "Z": s["Z"].astype(np.float64),
+                             "R": float(s["lam_N"]) * s["coef"].astype(np.float64),
+                             "alpha_bridge": float(s["alpha_bridge"])}, enc, spec)
+        return self._bridge if self._bridge != "none" else None
 
     def table(self):
         if self._table is None and self.manifest.get("static_table"):
@@ -161,7 +196,7 @@ class Bundle:
         hits = [self._index.get(self._key(t)) for t in texts]
         out = np.zeros((len(texts), self.Y.shape[1]))
         if mode == "consistent":
-            prov = ["surrogate (out-of-sample)" if h is not None else "surrogate"
+            prov = ["surrogate-oos" if h is not None else "surrogate"
                     for h in hits]
             new = list(range(len(texts)))
             for i, h in enumerate(hits):
@@ -180,10 +215,18 @@ class Bundle:
                 out[i] = self.Y[h]
         new = [i for i, h in enumerate(hits) if h is None]
         if new:
-            yh = A.predict([texts[i] for i in new], self.idf, self.coef, self.R,
-                           self.z, self.X, self.V, self.cfg, self.alpha_mix,
-                           self.k, self.table())
-            out[new] = yh
+            br = self.bridge()
+            if br is not None:
+                state, enc, spec = br
+                out[new] = A.predict_bridge([texts[i] for i in new], self.idf,
+                                            state, self.X, self.cfg, enc, self.k)
+                self._route = f"encoder:{spec}"
+            else:
+                out[new] = A.predict([texts[i] for i in new], self.idf,
+                                     self.coef, self.R, self.z, self.X, self.V,
+                                     self.cfg, self.alpha_mix, self.k,
+                                     self.table())
+                self._route = "n-gram"
         return out, prov
 
 
@@ -202,9 +245,9 @@ def run(bundle: pathlib.Path, texts_path: pathlib.Path, out: pathlib.Path,
         import csv
         with provenance.open("w", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)
-            w.writerow(["id", "source"])
+            w.writerow(["id", "source", "route"])
             for i, p in zip(ids, prov):
-                w.writerow([i, p])
+                w.writerow([i, p, "stored" if p == "exact" else b._route])
     report = {
         "records": len(texts),
         "mode": mode,
@@ -213,6 +256,8 @@ def run(bundle: pathlib.Path, texts_path: pathlib.Path, out: pathlib.Path,
         "fully_reproducible": n_exact == len(texts),
         "vector_sha256": hashlib.sha256(
             np.ascontiguousarray(Y).tobytes()).hexdigest(),
+        "route_for_new_texts": (b._route if b._route != "stored"
+                                else "none (no new texts)"),
         "fidelity_for_new_texts": {
             kk: round(float(vv), 4) for kk, vv in b.fidelity.items()
             if kk in ("rho_globalne", "cos_mediana", "recall@10", "R2")},

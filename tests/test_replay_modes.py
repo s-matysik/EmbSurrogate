@@ -48,7 +48,7 @@ def test_archival_returns_stored_vectors_and_consistent_does_not(bundle):
     exact, prov_a = b.vectors_for(texts, mode="archival")
     approx, prov_c = b.vectors_for(texts, mode="consistent")
     assert set(prov_a) == {"exact"}
-    assert set(prov_c) == {"surrogate (out-of-sample)"}
+    assert set(prov_c) == {"surrogate-oos"}
     assert np.allclose(exact, b.Y[:40])
     # out-of-sample coordinates are predictions, so they must NOT be the stored
     # vectors; anything closer than this would mean the fit saw its own answer
