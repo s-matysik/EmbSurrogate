@@ -372,9 +372,9 @@ from the licensed source under their own entitlement and is told by the digest
 whether they hold the same version of each record.
 
 Measured on 8,000 pairs, the text-free form is also the more faithful one: rank
-correlation 0.8006 for `W` alone and 0.8105 with the residual correction,
-against 0.7711 for the n-gram route that needs the texts, at 13.3 MB against
-36.7 MB. The price is the determinism contract, which this route is outside of:
+correlation 0.8006 for `W` alone at 13.3 MB and 0.8105 with the residual
+correction at 25.6 MB, against 0.7711 at 36.7 MB for the n-gram route that needs
+the texts. The price is the determinism contract, which this route is outside of:
 it calls a named neural encoder at replay time. Deposit the bundle too when the
 licence allows the texts; deposit this one when it does not.
 

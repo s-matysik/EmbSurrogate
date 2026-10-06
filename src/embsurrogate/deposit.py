@@ -28,8 +28,9 @@ in the clear:
   of numbers about each record, not its text.
 
 Measured on 8,000 pairs, the text-free deposit is also the more faithful one:
-rank correlation 0.8006 for `W` alone and 0.8105 with the correction, against
-0.7711 for the n-gram route that needs the texts -- at 13.3 MB against 36.7 MB.
+rank correlation 0.8006 for `W` alone at 13.3 MB and 0.8105 with the correction
+at 25.6 MB, against 0.7711 at 36.7 MB for the n-gram route that needs the texts;
+the correction's extra 12.3 MB is the two output-space arrays.
 What it costs is the determinism contract: this route calls a named neural
 encoder at replay time, so it is reproducible only as far as that encoder is,
 which is the very assumption the n-gram route exists to avoid. Deposit both if
