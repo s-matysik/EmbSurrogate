@@ -214,8 +214,16 @@ not to the regression: with the same estimator, better inputs do better.
 Consistently with that, adding pairs helps only slowly — the fitted scaling law
 is `1 − rho = 0.624 · N^(−0.110)` on the last three points of the learning curve
 (0.653 · N^(−0.114) over all five). The n-gram feature space, not the amount of
-supervision, is what holds the fidelity near rho ≈ 0.81; the honest consequence
-is stated in the README's limitations rather than smoothed over here.
+supervision, is what holds the fidelity near rho ≈ 0.81.
+
+That law is a property of **this feature space**, not of the method. Measured on
+the same split, the encoder route is flat in N — one encoder gives rho 0.8304 at
+43 093 pairs, the same as at 8 000 — and rises with the number of independent
+encoders instead: two give 0.8498 with R² 0.6152, against 0.8075 and 0.5348 for
+n-grams at equal N. A non-linear expansion of that space (Nyström, 2000 anchors,
+RBF) does not help once the residual correction is present: 0.8453 against
+0.8498, the same competition between the two mechanisms seen with the product
+kernel.
 
 Two further directions are implemented but not part of the published
 configuration: `probe_table.py` (query the teacher with *single words* to read

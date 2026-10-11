@@ -261,11 +261,13 @@ rho = 0.9 is decades of corpus away. The practical reading is that the ceiling
 is set by the feature space, not by the amount of supervision; a note in
 `docs/METHOD.md` records what an alternative feature space buys.
 
-> Note on provenance: the accompanying Polish method report quotes
-> `1 − rho = 0.513 · N^(−0.090)` for this fit. That constant pair does not
-> reproduce from the learning-curve files as archived (no window of
-> `krzywa_uczenia_T0.csv` or `krzywa_uczenia_A1.csv` yields it); the fits above
-> were recomputed from the saved tables and should be used.
+> Note on provenance: earlier drafts quoted `1 − rho = 0.513 · N^(−0.090)`.
+> That pair does reproduce from `wyniki/krzywa_uczenia_T0.csv` — but from the
+> three points ending at N = 25 622, i.e. before the 43 093-pair run existed.
+> Refitted with that point included, the exponent moves from −0.090 to −0.110
+> (−0.114 over all five points) and the extrapolations tighten: rho = 0.85 at
+> ≈ 3.9·10^5 pairs rather than 9·10^5. The fits above are the current ones and
+> the paper uses them.
 
 ## API
 
@@ -437,8 +439,13 @@ Read this section before using the package for anything.
    the mean training vector already reaches ≈ 0.35.
 5. **recall@10 ≈ 0.44**: fewer than half of the teacher's ten nearest
    neighbours appear among the surrogate's ten.
-6. **More data will not fix this.** The exponent of the scaling law is ≈ −0.11;
-   the limit is the n-gram feature space, not the number of pairs.
+6. **More data will not fix this, and the ceiling is route-specific.** The
+   exponent ≈ −0.11 describes the **n-gram route**: the limit there is the
+   feature space, not the number of pairs. The encoder route does not follow
+   that law at all — one encoder scores the same at 43 093 pairs as at 8 000,
+   while adding a *second* encoder raises rho by 0.019 and R² by 0.068 at no
+   extra data. On that route the binding constraint is how much the query-side
+   description knows about the text (`wyniki/wzmocnienie.csv`).
 7. **Domain and language follow the pairs.** The reported numbers come from
    multilingual encyclopaedic prose with a 384-dimensional teacher whose
    `max_seq_length` is 128. Nothing here transfers automatically to code,

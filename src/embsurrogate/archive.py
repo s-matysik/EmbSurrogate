@@ -167,12 +167,12 @@ def fit_bridge(texts: list[str], Y: np.ndarray, Z: np.ndarray, X,
     evidence of what the lost model did -- but nothing says the query side has
     to be described by n-grams. If ANY encoder can still be run, its vectors are
     a far better description of a new text than a bag of character n-grams is,
-    and the same ridge maps them into the archived space. Measured on 8,000
-    pairs with the mixing weight chosen on validation, this route reaches rank
-    correlation 0.832 on the held-out set against 0.771 for n-grams alone at
-    the same size -- and above the 0.808 that the n-gram route needs 43,093
-    pairs to reach. A review-sized archive with a usable encoder is therefore
-    more faithful than five times the data without one.
+    and the same ridge maps them into the archived space. Measured on the
+    held-out set at 43,093 pairs, one multilingual encoder reaches rank
+    correlation 0.8304 and two together 0.8498 (R2 0.6152), against 0.8075 and
+    0.5348 for n-grams at the same size; at 8,000 pairs one encoder already
+    reached 0.832, so this route is flat in N and rises with the number of
+    independent encoders instead.
 
     The cost is a dependency, and it is the dependency this package exists to
     avoid, so the bundle keeps BOTH routes: this one when the named encoder can
@@ -256,7 +256,8 @@ def build(texts_path: pathlib.Path, vectors_path: pathlib.Path,
     # wrong domain), and then it is worse than a bag of character n-grams:
     # measured, an English model on a Polish corpus gives rank correlation
     # 0.631 against 0.754 for n-grams, while a matched multilingual one gives
-    # 0.801. The mixing weight is chosen the same way, from a small grid.
+    # 0.801 at that size. The mixing weight is chosen the same way, from a
+    # small grid.
     enc = encoder_fn(encoder)
     bridge = bridge_measured = None
     bridge_note = ""
