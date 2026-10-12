@@ -217,7 +217,8 @@ than the one that built it: see `.github/workflows/ci.yml` and
 The claim that a frozen model returns the same vectors on a different machine
 was, until this repository had continuous integration, verified on one machine
 only. The first CI run -- Ubuntu and macOS, Python 3.11 and 3.12 -- failed on
-all four combinations, and the failure was real rather than a configuration
+all four combinations then in the matrix, and the failure was real rather
+than a configuration
 problem.
 
 The diagnostic in `examples/diagnose_platform.py` separates the feature path
@@ -239,7 +240,7 @@ reduction, `val @ val` in the L2 normalisation, which numpy dispatches to BLAS
 and whose summation order depends on the SIMD width and the thread count. The
 correctly rounded sum agrees on every platform, and it is now what the feature
 path uses (`features._row_norm`, feature version `klon-features-3`). The change
-moves feature values by at most 2.8e-17; after it, all four combinations
+moves feature values by at most 2.8e-17; after it, every combination
 reproduce the frozen digests exactly and the golden-vector checks pass.
 
 Two lessons generalise beyond this package. First, a reduction -- any dot
@@ -252,3 +253,14 @@ before this run, and only a second architecture exposed it.
 Models frozen under feature version 2 carry no `norm_sum` key, are read through
 the dot-product path, and therefore remain bit-reproducible on the architecture
 that produced them; the loader accepts both versions for exactly that reason.
+
+
+## Windows
+
+The matrix originally covered Linux and macOS. Windows was added before
+submission and failed at once -- not on the numbers but on the shell: the steps
+use here-documents and the default shell there is PowerShell. With the job
+default set to bash, which GitHub's Windows runners ship, all six combinations
+pass, including the golden check that reads a bundle built on macOS/arm64 and
+compares features and vectors digest by digest. The determinism contract is
+therefore verified across three operating-system families, not two.
