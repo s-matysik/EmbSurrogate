@@ -380,6 +380,8 @@ the texts. The price is the determinism contract, which this route is outside of
 it calls a named neural encoder at replay time. Deposit the bundle too when the
 licence allows the texts; deposit this one when it does not.
 
+Which of the four situations you are in decides almost everything about how this package should be used: see [docs/USE_CASES.md](docs/USE_CASES.md).
+
 ## What `exact` means
 
 A record found in the archive is returned **exactly at the archival precision
