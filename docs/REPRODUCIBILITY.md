@@ -19,7 +19,7 @@ texts held out of it, and the golden vectors.
 pip install ".[test]"
 export OMP_NUM_THREADS=2
 
-pytest -q                                      # 25 tests
+pytest -q                                      # 63 tests
 
 python -m embsurrogate.replay_check tests/data/surrogate_tiny.npz \
     --probes tests/data/probes_tiny.jsonl \

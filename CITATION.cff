@@ -15,7 +15,7 @@ abstract: >-
   similarities 0.8075, median cosine to the teacher vector 0.8121, R-squared
   0.5348, recall@10 0.4402.
 type: software
-version: "0.1.0"
+version: "1.0.0"
 license: MIT
 authors:
   - family-names: Matysik

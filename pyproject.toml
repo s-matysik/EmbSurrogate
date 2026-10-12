@@ -60,7 +60,7 @@ embsurrogate-freeze = "embsurrogate.freeze:main"
 
 [project.urls]
 # Fill in before submission.
-Repository = "<REPO_URL>"
+Repository = "https://github.com/s-matysik/EmbSurrogate"
 
 [tool.setuptools.dynamic]
 version = { attr = "embsurrogate.__version__" }

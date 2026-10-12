@@ -225,6 +225,18 @@ RBF) does not help once the residual correction is present: 0.8453 against
 0.8498, the same competition between the two mechanisms seen with the product
 kernel.
 
+The map itself matters, and not only its inputs. Keeping a vector index usable
+across model versions is established practice, and the adapters that do it
+include an orthogonal Procrustes map (Vejendla, *Drift-Adapter*, EMNLP 2025,
+doi:10.18653/v1/2025.emnlp-main.805); that setting differs from this one in
+that both models can still be run. Measured on the same split, the orthogonality
+constraint is expensive: 0.5498 against 0.8061 for the ridge before the residual
+correction, 0.8045 against 0.8304 after it, and — the part that decides the
+default — Procrustes cannot use a second encoder at all, giving 0.7855 against
+0.8498, because `QᵀQ = I` leaves no freedom to weight two descriptions against
+each other. The ridge is therefore the shipped map, with Procrustes kept only as
+a measured baseline.
+
 Two further directions are implemented but not part of the published
 configuration: `probe_table.py` (query the teacher with *single words* to read
 its static table directly, then pool — the Model2Vec-style construction, here

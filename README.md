@@ -110,7 +110,7 @@ pip install ".[experiments]"
 ```
 
 From the repository root; the package is also importable from `src/` without
-installation (`PYTHONPATH=src`). The published source is at `<REPO_URL>`.
+installation (`PYTHONPATH=src`). The published source is at <https://github.com/s-matysik/EmbSurrogate>.
 
 ## The workflow this package is for
 
@@ -380,11 +380,23 @@ the texts. The price is the determinism contract, which this route is outside of
 it calls a named neural encoder at replay time. Deposit the bundle too when the
 licence allows the texts; deposit this one when it does not.
 
+## What `exact` means
+
+A record found in the archive is returned **exactly at the archival precision
+the manifest states** — six decimals, the unit the vectors are stored in as
+`int32` and the unit the SHA-256 digests cover. That is a reproduction of the
+canonical archival representation, not of the original `float32` bits of the
+teacher's output, which the deposit does not keep. For everything this package
+is for — ranking, similarity, screening order — the two are indistinguishable,
+but the distinction belongs in the record, so `verify` checks the former and
+never claims the latter. A record not found is marked `surrogate`, with a second
+column naming the route that produced it.
+
 ## Determinism and testing
 
 The claim under test is narrow and falsifiable: *for a given frozen model and a
 given text, the vector quantised to 6 decimals is the same on every
-IEEE-754 machine.* The suite (`pytest -q`, 25 tests) covers:
+IEEE-754 machine.* The suite (`pytest -q`, 63 tests) covers:
 
 * feature determinism within one process and across two processes;
 * independence from `PYTHONHASHSEED` (0 and 12345) — hashing is SHA-256, so the
@@ -477,7 +489,7 @@ acceptance:
   journal = {SoftwareX},
   year    = {2026},
   doi     = {<DOI>},
-  url     = {<REPO_URL>}
+  url     = {https://github.com/s-matysik/EmbSurrogate}
 }
 ```
 
