@@ -22,6 +22,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
+    defaults:
+      run:
+        # Steps below use here-documents, which PowerShell does not parse; the
+        # Windows runner ships Git bash, so one shell covers the whole matrix.
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
