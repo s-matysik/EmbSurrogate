@@ -99,3 +99,36 @@ grant-portfolio analysis. The caveat is honest rather than formal: fidelity was
 measured on biomedical abstracts and Polish Wikipedia, so for another domain the
 number you should trust is the one `archive` measures on your own corpus and
 writes into the manifest.
+
+## Trying it on a small sample first
+
+Before committing a real corpus, run the whole cycle on a few hundred texts:
+
+```
+bash examples/try_it.sh corpus.jsonl 600
+bash examples/try_it.sh corpus.jsonl 600 sentence-transformers/all-MiniLM-L6-v2
+```
+
+It takes the first 600 records, holds the last 10% out, computes teacher
+vectors, builds a bundle, verifies it, replays both populations and prints the
+fidelity `archive` measured on your own corpus. A real run on 540 archived plus
+60 held-out Wikipedia entries, with `all-MiniLM-L6-v2` as the teacher:
+
+| what | result |
+|---|---|
+| bundle | 2.9 MB (`manifest.json`, `pairs.npz`, `surrogate.npz`) |
+| `verify --strict` | all seven checks pass, reference agreement 5.6e-17 |
+| replay of the 540 archived texts | 540 exact, 0 approximated, `fully_reproducible: true` |
+| replay of the 60 held-out texts | 60 approximated, route recorded per record |
+| fidelity, n-gram route | rank correlation 0.41, median cosine 0.78 |
+| fidelity, with an encoder named at archive time | rank correlation 0.59 |
+| text-free deposit | 2.1 MB, `contains_source_texts: false` |
+
+**Read those two fidelity numbers as a property of the sample size, not of the
+method.** At 540 pairs the dependency-free route is far below the 0.81 it
+reaches at 43,093, exactly as the scaling law says it must be; the encoder route
+is much less sensitive to N, which is why it wins here by 0.18 and `archive`
+keeps it. What a small sample does test, and tests completely, is the part that
+either works or does not: the checksums, the exact lookups, the honest labelling
+of every approximated record, and whether the fidelity your corpus actually
+yields is enough for what you intend to do with it.
