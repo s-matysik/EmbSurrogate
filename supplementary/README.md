@@ -63,7 +63,7 @@ and is versioned there. What this record adds is the measurements.
   machine that did not build it
 * `tests/data/expected_tiny.npy` : the vectors it must return, to the archival
   precision named in its manifest
-* `tests/data/probes_tiny.jsonl` : the 100 control texts those vectors belong to
+* `tests/data/probes_tiny.jsonl` : the 20 control texts those vectors belong to
 * `tests/data/surrogate_tiny.manifest.json` : digests and the feature-version
   marker the loader checks
 
