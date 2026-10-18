@@ -1,0 +1,30 @@
+{
+  "n_rekordow": 2000,
+  "ngram": {
+    "protocol": "20% of the corpus held out, seed 0",
+    "n_holdout": 400,
+    "cos_mediana": 0.8210671485998217,
+    "cos_centrowany": 0.7232663079462461,
+    "R2": 0.4703375274940066,
+    "rho_globalne": 0.7791814866882132,
+    "rho_per_zapytanie": 0.786497619677334,
+    "recall@10": 0.485,
+    "ndcg@10": 0.9094479818859412,
+    "AP@0.6": 0.4068859484526487,
+    "czulosc@FPR1e-4_0.6": 0.05646359583952452,
+    "udzial_dodatnich@0.6": 0.00843358395989975
+  },
+  "most": {
+    "cos_mediana": 0.8417226891647516,
+    "cos_centrowany": 0.7641598758875994,
+    "R2": 0.536866624544323,
+    "rho_globalne": 0.8360120584144866,
+    "rho_per_zapytanie": 0.8384236974345411,
+    "recall@10": 0.54925,
+    "ndcg@10": 0.9322222950417021,
+    "AP@0.6": 0.5551518003406036,
+    "czulosc@FPR1e-4_0.6": 0.10549777117384844,
+    "udzial_dodatnich@0.6": 0.00843358395989975
+  },
+  "most_zachowany": true
+}

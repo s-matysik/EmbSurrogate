@@ -1,0 +1,18 @@
+grupa,sciezka,n_tekstow,s1,s2,s3,s_u,s_w,max_roznica_przed_kwantyzacja,teksty_niezgodne,wsp_niezgodne,s_na_tekst,podstawa_porownania,uwagi
+sciezka,"numpy float64 (BLAS, obecna inferencja)",1200,48,48,48,54,108,1.137111238502797e-13,0,0,0.1004,calkowitoliczbowa (s_u=54),pelna walidacja ds_big2
+sciezka,"calkowitoliczbowa, wektorowo (limby int64/float64)",1200,48,48,48,54,108,0.0,0,0,0.498,definicja,"ta sama arytmetyka co czysty Python, sumy wektorowo"
+sciezka,"math.fsum (float64, sumy poprawnie zaokraglone)",120,48,48,48,-,-,1.5064338665382593e-14,0,0,5.64,numpy float64,podprobka 120/1200; vs referencja s_u=54 na 10 najtrudniejszych tekstach: 6.94e-14
+sciezka,"calkowitoliczbowa, czysty Python (normatywna)",3,48,48,48,54,108,0.0,0,0,3.4,calkowitoliczbowa wektorowo,identycznosc bit-w-bit na 3 tekstach (2 z 10 niezgodnych w przebiegu 1 + 1 losowy); przy s_u=30 bylo 9.3 s/tekst na obciazonej maszynie
+sciezka,numpy float64 (przed poprawieniem skal tricube),1200,48,48,48,30,60,9.286775220357368e-10,10,10,0.1496,calkowitoliczbowa (s_u=30),"przebieg pierwszy — blad brał się z referencji, nie z numpy"
+przemiatanie,calkowitoliczbowa s1=24 s2=s3=48,60,24,48,48,30,60,,60,917,0.525,numpy float64,max roznica po kwantyzacji 1e-06
+przemiatanie,calkowitoliczbowa s1=32 s2=s3=48,60,32,48,48,30,60,,3,3,0.53,numpy float64,max roznica po kwantyzacji 1e-06
+przemiatanie,calkowitoliczbowa s1=40 s2=s3=48,60,40,48,48,30,60,,0,0,0.521,numpy float64,max roznica po kwantyzacji 0e+00
+przemiatanie,calkowitoliczbowa s1=48 s2=s3=48,60,48,48,48,30,60,,0,0,0.601,numpy float64,max roznica po kwantyzacji 0e+00
+przemiatanie,calkowitoliczbowa s1=48 s2=s3=24,60,48,24,24,30,60,,60,3688,0.635,numpy float64,max roznica po kwantyzacji 2e-06
+przemiatanie,calkowitoliczbowa s1=48 s2=s3=32,60,48,32,32,30,60,,12,13,0.506,numpy float64,max roznica po kwantyzacji 1e-06
+przemiatanie,calkowitoliczbowa s1=48 s2=s3=40,60,48,40,40,30,60,,1,1,0.559,numpy float64,max roznica po kwantyzacji 1e-06
+zrodlo_bledu,10 najtrudniejszych tekstow: baza s_u=30,10,48,48,48,30,60,4.769623411504664e-10,10,,,math.fsum,10 tekstow niezgodnych w przebiegu pierwszym
+zrodlo_bledu,10 najtrudniejszych tekstow: s_u=54 s_w=108,10,48,48,48,54,108,6.944445019030354e-14,0,,,math.fsum,10 tekstow niezgodnych w przebiegu pierwszym
+zrodlo_bledu,10 najtrudniejszych tekstow: s2=54 (s_u=30),10,48,54,48,30,60,4.769680969629597e-10,10,,,math.fsum,10 tekstow niezgodnych w przebiegu pierwszym
+zrodlo_bledu,10 najtrudniejszych tekstow: s2=54 + s_u=54,10,48,54,48,54,108,4.024384991918595e-14,0,,,math.fsum,10 tekstow niezgodnych w przebiegu pierwszym
+zrodlo_bledu,10 najtrudniejszych tekstow: s_tf=54 + s_u=54,10,48,48,48,54,108,7.261552470438914e-14,0,,,math.fsum,10 tekstow niezgodnych w przebiegu pierwszym

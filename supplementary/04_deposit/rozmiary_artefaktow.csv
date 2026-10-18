@@ -1,0 +1,8 @@
+artefakt,MB,co umożliwia
+model nauczyciela all-MiniLM-L6-v2 (checkpoint),87.0,"liczenie wektorów dla dowolnego tekstu, dopóki wersja istnieje"
+model allenai-specter (typowy dla tekstów naukowych),420.0,to samo
+same wektory przeglądu (3345 rekordów),10.3,"dokładne odtworzenie dla tych rekordów, nic dla nowych"
+"pakiet embsurrogate, przegląd 3345 rekordów",14.4,dokładne dla archiwalnych + przybliżone dla nowych
+pakiet z dowiązaniem do zdeponowanych wektorów,10.6,"to samo, bez duplikowania wektorów"
+"pakiet badawczy 43 093 par, format 1 (poprzedni)",558.0,to samo
+"pakiet badawczy 43 093 par, format 2",159.8,"to samo, wierność bez zmian"

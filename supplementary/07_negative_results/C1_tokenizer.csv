@@ -1,0 +1,8 @@
+wariant,nnz,cos,rho
+znaki 3-4 + ucięcie po 128 tokenach,580.0,0.739,0.728
+"subwordy 1-2, count/T",174.0,0.7208,0.652
+"subwordy 1-2, count/T-idfcap",174.0,0.7221,0.6621
+"subwordy 1-2, count/T-sqrtidf",174.0,0.7257,0.6473
+"subwordy 1-2, logtf-idf-l2",174.0,0.7263,0.6276
+suma jąder 0.5*znaki3-4(cut)+0.5*subwordy,,0.7495,0.7068
+suma jąder 0.7*znaki3-4(cut)+0.3*subwordy,,0.7493,0.7193

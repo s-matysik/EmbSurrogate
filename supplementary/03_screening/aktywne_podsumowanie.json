@@ -1,0 +1,27 @@
+{
+  "jednorazowy_ranking_recall10": {
+    "nauczyciel": 0.4373,
+    "surogat dziedzinowy": 0.5162,
+    "BM25": 0.5573
+  },
+  "aktywne_uczenie_recall10": {
+    "nauczyciel": 0.6374,
+    "surogat dziedzinowy": 0.6705,
+    "tf-idf (bez modelu)": 0.6913
+  },
+  "aktywne_uczenie_sd_powtorzen": {
+    "nauczyciel": 0.0461,
+    "surogat dziedzinowy": 0.043,
+    "tf-idf (bez modelu)": 0.0393
+  },
+  "przeczytane_do_95": {
+    "nauczyciel": 0.3473,
+    "surogat dziedzinowy": 0.3241,
+    "tf-idf (bez modelu)": 0.3099
+  },
+  "rho_surogat_nauczyciel": 0.7288,
+  "surogat_tanszy_niz_nauczyciel_tematow": 3,
+  "tematow": 5,
+  "powtorzen_na_temat": 5,
+  "nauczyciel": "all-MiniLM-L6-v2"
+}

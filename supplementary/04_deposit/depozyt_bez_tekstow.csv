@@ -1,0 +1,5 @@
+wariant,rho_globalne,cos_mediana,R2,recall@10
+teksty: n-gramy (stan obecny),0.7711,0.76,0.4231,0.4019
+pierwotny_enc: W + korekta,0.8105,0.7809,0.4806,0.4448
+dualny_enc (odniesienie),0.8105,0.7809,0.4806,0.4448
+tylko_W (bez korekty),0.8006,0.7707,0.4521,0.4215

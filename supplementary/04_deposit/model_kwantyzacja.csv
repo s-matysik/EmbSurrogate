@@ -1,0 +1,6 @@
+wariant,MB,rho,cos_mediana
+pelna precyzja (fp32),540.5,1.0,1.0
+wagi fp16,270.4,1.0,1.0
+wagi int8 per-kanal,135.3,0.9999,0.999905
+surogat n-gramowy (8k par),13.3,0.7711,0.76
+most n-gramy+enkoder (8k par),25.6,0.8323,0.811

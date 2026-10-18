@@ -1,0 +1,4 @@
+,paraphrase-multilingual-MiniLM-L12-v2,all-MiniLM-L6-v2,distiluse-base-multilingual-cased-v1
+paraphrase-multilingual-MiniLM-L12-v2,1.0,0.4535776375759375,0.5601999125095465
+all-MiniLM-L6-v2,0.4535776375759375,1.0,0.32905650488768434
+distiluse-base-multilingual-cased-v1,0.5601999125095465,0.32905650488768434,1.0

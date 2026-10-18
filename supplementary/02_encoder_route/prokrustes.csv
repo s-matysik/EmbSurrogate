@@ -1,0 +1,7 @@
+wariant,metoda,korekta,rho_globalne,cos_mediana,R2,recall@10
+"1 enkoder, Prokrustes",procrustes,False,0.5498,0.6173,0.1058,0.3373
+"1 enkoder, grzbiet",ridge,False,0.8061,0.7792,0.4742,0.4251
+"1 enkoder, Prokrustes + korekta",procrustes,True,0.8045,0.7242,0.3554,0.4373
+"1 enkoder, grzbiet + korekta",ridge,True,0.8304,0.8133,0.5478,0.4668
+"2 enkodery, Prokrustes + korekta",procrustes,True,0.7855,0.7126,0.3422,0.4393
+"2 enkodery, grzbiet + korekta",ridge,True,0.8498,0.8385,0.6152,0.4982

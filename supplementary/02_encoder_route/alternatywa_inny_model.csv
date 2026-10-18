@@ -1,0 +1,4 @@
+metoda,rho,cos,R2,recall@10,N,zbior
+"surogat n-gramowy (sam grzbiet, lam=1e-4)",0.7541,0.7551,0.4131,0.3891,8000,T0 (świeży)
+inny enkoder: all-MiniLM-L6-v2 (lam=1e-4),0.6314,0.6792,0.2361,0.2576,8000,T0 (świeży)
+inny enkoder: distiluse-base-multilingual-cased-v1 (lam=1e-4),0.8006,0.7707,0.4521,0.4215,8000,T0 (świeży)
