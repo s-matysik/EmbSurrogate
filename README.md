@@ -1,5 +1,7 @@
 # embsurrogate, a deterministic, archivable surrogate of a text-embedding model
 
+Documentation site: **https://s-matysik.github.io/EmbSurrogate/**
+
 `embsurrogate` reconstructs the map *text → vector* of a sentence-embedding
 model from nothing but **pairs (text, vector)** produced by that model, and
 freezes the reconstruction into a single file that can be replayed years later
