@@ -402,7 +402,7 @@ column naming the route that produced it.
 software paper, grouped by the section that cites them, with a README mapping
 each file to its claim and a digest list. The verification baseline those
 numbers rest on is the test fixture at `tests/data/`: a 900-pair bundle of
-Polish Wikipedia entries, 100 control texts and the vectors the bundle must
+Polish Wikipedia entries, 20 control texts and the vectors the bundle must
 return, which is what the continuous-integration job reads on a machine that
 did not build it. An archived copy of both, with a DOI, is cited in the paper.
 
