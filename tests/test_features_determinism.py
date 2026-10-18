@@ -1,4 +1,4 @@
-"""The feature map must be a pure function of the text — in this process, in
+"""The feature map must be a pure function of the text, in this process, in
 another process, and under any hash seed.
 
 Everything the surrogate archives rests on this: if Phi(text) is allowed to
@@ -21,7 +21,7 @@ from embsurrogate import features as F
 TEXTS = [
     "umowa najmu lokalu użytkowego zawarta w Krakowie",
     "The quick brown fox jumps over 13 lazy dogs.",
-    "Ångström ß ΣΙΓΜΑ — NFKC and casefold corner cases",
+    "Ångström ß ΣΙΓΜΑ, NFKC and casefold corner cases",
     "digits 2024 and 1999 fold to the same feature",
     "",
     "x",

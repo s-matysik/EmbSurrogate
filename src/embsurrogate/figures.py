@@ -82,7 +82,7 @@ def build(dataset: pathlib.Path, wyniki: pathlib.Path, model: pathlib.Path,
     ax_b.axvline(floor.spearman_sim if np.isfinite(floor.spearman_sim) else 0.0,
                  color=C_FLOOR, lw=1.0, ls="--")
     ax_b.axvline(best_ceiling.spearman_sim, color=C_CEIL, lw=1.1, ls=":")
-    # method labels inside the panel — in the narrow two-column layout
+    # method labels inside the panel, in the narrow two-column layout
     # the y-axis captions would overlap the neighbouring panel
     ax_b.set_yticks(ypos); ax_b.set_yticklabels([])
     for yy, lab in zip(ypos, order):

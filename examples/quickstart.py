@@ -23,7 +23,7 @@ MODEL = DATA / "surrogate_tiny.npz"
 NEW_TEXTS = [
     "umowa najmu lokalu użytkowego zawarta na czas oznaczony",
     "kernel ridge regression in dual form with a tricube correction",
-    "Prva liga Jugoslavije — tabela końcowa sezonu",
+    "Prva liga Jugoslavije, tabela końcowa sezonu",
 ]
 
 

@@ -2,9 +2,9 @@
 
 We distinguish two levels of agreement, because they are not the same:
 
-1. POINTWISE FIDELITY — cos(surrogate(t), teacher(t)). Tells us how close
+1. POINTWISE FIDELITY, cos(surrogate(t), teacher(t)). Tells us how close
    we get to a specific vector.
-2. GEOMETRIC FIDELITY — whether the surrogate preserves relations between texts:
+2. GEOMETRIC FIDELITY, whether the surrogate preserves relations between texts:
    correlation of similarity matrices, ranking agreement (recall@k), error
    in reconstructing the cosine itself. This is what embeddings are used for,
    and it is the proper criterion for "cloning the behaviour" of a model.
@@ -105,17 +105,16 @@ def report_full(Y_true: np.ndarray, Y_hat: np.ndarray, mu: np.ndarray,
                 seed: int = 0) -> dict:
     """A metric suite robust to three artifacts that corrupt interpretation:
 
-    1. Shared component — median cos is dominated by it (the mean training
+    1. Shared component, median cos is dominated by it (the mean training
        vector alone gives 0.35), hence we also compute cos AFTER SUBTRACTING `mu` from both
        sides and R² = 1 - SSE/SST.
     2. Global rho across all pairs mainly orders unrelated pairs
        (teacher cos 0.1-0.4), so we add rho PER QUERY (across rows of the
        similarity matrix) and recall@k and NDCG@k.
-    3. AUC at a high threshold is degenerate under class imbalance —
-       we report average precision (AP) and sensitivity at FPR = 1e-4.
+    3. AUC at a high threshold is degenerate under class imbalance, we report average precision (AP) and sensitivity at FPR = 1e-4.
 
     Confidence interval computed by bootstrap OVER TEXTS (the resampling unit is
-    the text, not the pair — pairs are not independent).
+    the text, not the pair, pairs are not independent).
     """
 
     cos = cosine_rowwise(Y_true, Y_hat)

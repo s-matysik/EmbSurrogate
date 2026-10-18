@@ -1,18 +1,18 @@
-"""Surrogate embedding model — text -> vector mapping computed
+"""Surrogate embedding model, text -> vector mapping computed
 exclusively on (text, vector) pairs from the teacher model.
 
 All estimators are of dual form (via the kernel), i.e. the prediction is
 a combination of TRAINING VECTORS, not a product with a weight matrix of size
 D x 1024. There are two reasons: (1) D = 262144, so the primal matrix would have
 ~1 GB, while the dual coefficients are N x 1024; (2) in dual form, ridge
-regression, Nadaraya-Watson and LOESS are the same family — they differ only
-in the shape of the weights — so they can be fairly compared.
+regression, Nadaraya-Watson and LOESS are the same family, they differ only
+in the shape of the weights; so they can be fairly compared.
 
 Methods:
     knn1       nearest neighbour (lower reference, "copy the neighbour")
     nw         Nadaraya-Watson: tricube kernel weighted average over k neighbours
     loess      local linear regression (LOESS degree 1) in Nyström
-               coordinates, tricube weights — variant proposed by the client
+               coordinates, tricube weights, variant proposed by the client
     ridge      kernel ridge regression (global, closed-form solution)
     rbf        as above, but Gaussian kernel on angular distance
     hybrid     ridge as trend + LOESS on residuals (error smoothing)

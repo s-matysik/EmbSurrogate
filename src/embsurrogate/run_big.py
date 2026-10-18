@@ -1,4 +1,4 @@
-"""Fitting the surrogate on a large set of pairs — separate process, low memory.
+"""Fitting the surrogate on a large set of pairs, separate process, low memory.
 
     python3 -m klon.run_big data/ds_big3 model/surogat_v3.npz wyniki/v3
 
@@ -8,10 +8,10 @@ previously computed something else already has memory occupied and the allocatio
 (in my case the kernel got SIGUSR1). A fresh process starts with ~100 MB.
 
 The split is reproducible from seeds, and not saved to a file:
-    validation = old 1200 (split(6000, 0.2, seed=0)) — variants were selected on it
-    T0         = indices 18001..19200 — fresh test, single use
+    validation = old 1200 (split(6000, 0.2, seed=0)), variants were selected on it
+    T0         = indices 18001..19200, fresh test, single use
     pool       = the rest, in sequence: rng(1) on 0..19200, rng(2) on 19201..28021,
-                 rng(3) on 28022..end — nested order, so
+rng(3) on 28022..end; nested order, so
                  subsets from the learning curve are prefixes of the same list."""
 
 from __future__ import annotations

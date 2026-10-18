@@ -40,7 +40,7 @@ dependencies = ["numpy>=1.24"]
 # Only needed to DISTIL a static token table (archiving time, model present).
 table = ["sentence-transformers>=2.2", "transformers>=4.30"]
 # scipy is needed only to FIT a surrogate (sparse matrices, Cholesky, LAPACK
-# strtri) and to compute evaluation statistics — never to read a frozen model.
+# strtri) and to compute evaluation statistics, never to read a frozen model.
 train = ["scipy>=1.10"]
 test = ["pytest>=7.4", "scipy>=1.10"]
 # Full research pipeline: grid searches, teacher encoding, figures.

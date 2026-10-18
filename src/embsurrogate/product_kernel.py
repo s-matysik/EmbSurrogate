@@ -3,7 +3,7 @@
 MECHANISM
 ---------
 The linear kernel on n-grams assumes that the contribution of a given n-gram to
-the teacher vector is CONSTANT — the same in every context. The T6 measurement
+the teacher vector is CONSTANT, the same in every context. The T6 measurement
 showed that this assumption is false: the teacher is non-additive (the vector
 of a concatenation of two texts is not the sum of their vectors, residual
 0.339), i.e. it is strongly contextualizing. We model this with a product
@@ -41,14 +41,14 @@ MEASURED EFFECT (validation 1200, N = 9600, features signs 3-4, results/jadra_C3
 Reading these numbers: at the MATCHED lambda kappa gives a clear gain
 (+0.0113 rho, +0.063 R^2 versus the control). Against the BEST baseline
 configuration the gain is already only marginal: R^2 +0.018 and centered cos
-+0.010, whereas global rho is 0.0023 WORSE — i.e. indistinguishable (baseline
++0.010, whereas global rho is 0.0023 WORSE, i.e. indistinguishable (baseline
 CI95 0.7584-0.7854). Practical meaning: the product kernel is worth enabling
 when the goal is pointwise vector fidelity (R^2, cos), not pair ordering;
 q = 4 is already worse on all metrics, q = 8 is markedly worse (rho 0.7515).
 
 Structure of the problem: kappa and residual correction in the output space
 implement the SAME idea (locality in the target space) and largely substitute
-for each other — the gain from residual correction drops from +0.0198 (linear
+for each other, the gain from residual correction drops from +0.0198 (linear
 kernel, lam=1e-4) to +0.0018 (K2 q=2, lam=1e-5), because stage I no longer
 leaves a residual to correct."""
 
@@ -84,7 +84,7 @@ def fit_iloczyn(K: np.ndarray, Ytr: np.ndarray, q: int = 2, lam1: float = 1e-4,
     """Two-stage fit on a precomputed linear kernel matrix K (N x N).
 
     alpha1/z can be provided externally (e.g. computed once via
-    `dual.solve_ridge_loo_f32` for large N) — then lam1 is only a record.
+    `dual.solve_ridge_loo_f32` for large N), then lam1 is only a record.
     """
     n = K.shape[0]
     if alpha1 is None or z is None:

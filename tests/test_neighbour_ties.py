@@ -2,7 +2,7 @@
 
 `argpartition`/`argsort` are free to order equal keys however the underlying
 implementation likes, and on the published model the smallest measured gap
-between the k-th and the (k+1)-th neighbour was 1.99e-16 — i.e. ties do occur
+between the k-th and the (k+1)-th neighbour was 1.99e-16, i.e. ties do occur
 in practice. A different neighbour SET is a different function, not a rounding
 difference, so the selection key is fixed to (-similarity, training index).
 """

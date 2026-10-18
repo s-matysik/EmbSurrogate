@@ -1,4 +1,4 @@
-# embsurrogate — a deterministic, archivable surrogate of a text-embedding model
+# embsurrogate, a deterministic, archivable surrogate of a text-embedding model
 
 `embsurrogate` reconstructs the map *text → vector* of a sentence-embedding
 model from nothing but **pairs (text, vector)** produced by that model, and
@@ -6,16 +6,16 @@ freezes the reconstruction into a single file that can be replayed years later
 with numpy as the only dependency.
 
 The purpose is **archival**, not compression or theft of a model: when the
-version of the teacher model used to build a corpus index disappears — a
+version of the teacher model used to build a corpus index disappears, a
 Hugging Face revision is deleted, an API endpoint is retired, a vendor changes
-a "stable" model in place — the vectors already stored in the index remain, but
+a "stable" model in place: the vectors already stored in the index remain, but
 there is no longer any way to embed a *new* document into the same space. A
 frozen surrogate restores that ability: it is a deterministic function that
 maps new text into the old vector space with measured, and deliberately
 modest, fidelity.
 
 * No access to the teacher's weights, gradients, tokenizer or logits is
-  assumed — only its inputs and outputs.
+  assumed, only its inputs and outputs.
 * Inference from a frozen model imports **numpy only**; scipy is needed to
   *fit* a surrogate, never to *read* one.
 * Every step that could depend on the machine (hash seeds, summation order,
@@ -46,7 +46,7 @@ modest, fidelity.
 
 A retrieval system built on sentence embeddings stores two things: the vectors
 of its documents and, implicitly, the *function* that produced them. The
-vectors are durable — they are just numbers in a file. The function is not: it
+vectors are durable, they are just numbers in a file. The function is not: it
 lives in a model checkpoint whose availability, revision pinning and numerical
 behaviour are outside the archive's control. When the function is gone, the
 stored index becomes read-only: existing documents can still be compared with
@@ -54,8 +54,8 @@ each other, but nothing new can be added to the same space, so the index cannot
 be extended, re-chunked or audited against new material.
 
 This package addresses the narrow, well-posed part of that problem: given a
-sample of the teacher's behaviour — pairs (text, vector) collected while the
-teacher was still available — fit a *surrogate* function that (i) is
+sample of the teacher's behaviour, pairs (text, vector) collected while the
+teacher was still available, fit a *surrogate* function that (i) is
 deterministic and dependency-light enough to survive as an archival artefact,
 and (ii) reproduces the teacher's **geometry** well enough to keep rank-based
 operations meaningful. How well "well enough" is, is measured below and is not
@@ -79,11 +79,11 @@ combination of the *training vectors*, with coefficients
 matrix rather than a `D × d` primal matrix (which would be ~1 GB at `D = 2^18`).
 
 **Residual correction (`hybrid_z`).** The ridge trend is corrected by a locally
-weighted average of training residuals with a tricube kernel — but the
+weighted average of training residuals with a tricube kernel, but the
 neighbourhood is searched in the **output space**, using the first-stage
 prediction, not in n-gram space. In n-gram space two unrelated texts sit at
-cosine 0.2–0.3, so "neighbourhood" there is largely fictitious; after the first
-stage, neighbours sit at cosine 0.6–0.8. The training coordinates for that
+cosine 0.2 to 0.3, so "neighbourhood" there is largely fictitious; after the first
+stage, neighbours sit at cosine 0.6 to 0.8. The training coordinates for that
 search are **leave-one-out** predictions (`y_i − e_i`), not in-sample ones: at
 small `lambda` the in-sample prediction is nearly `y_i`, a situation a test text
 never enjoys, and the correction would otherwise learn the leak.
@@ -136,7 +136,7 @@ embsurrogate verify --bundle bundle/ --strict
 
 **The distinction that matters, and which `replay` never blurs.** For a record
 that was archived, the vector returned is the one the model produced, identical
-bit for bit — a lookup, not an approximation. If the raw data is the same, every
+bit for bit, a lookup, not an approximation. If the raw data is the same, every
 vector is exact and the selection recomputed from them is the original
 selection; `replay` reports `"fully_reproducible": true` and the provenance file
 has zero `surrogate` rows. For a record that was *not* archived, the vector comes
@@ -153,7 +153,7 @@ CLEF eHealth TAR 2019 (details in [docs/METHOD.md](docs/METHOD.md)):
 | the active loop this package runs | 0.637 | 0.671 | 0.691 |
 
 Two readings of that table, both honest. Replacing a lost model with the
-surrogate costs nothing measurable in a screening workflow — and the lexical
+surrogate costs nothing measurable in a screening workflow, and the lexical
 baseline, which needs no model at all, is at least as good on these reviews.
 The baselines are computed inside `select` for exactly this reason: a tool
 should let you find out whether your embedding step earns its keep, not assume
@@ -177,26 +177,26 @@ sims = Q @ np.asarray(model.state["Y"]).T                 # against teacher vect
 print(model.ids[int(sims.argmax())], float(sims.max()))   # nearest archived text
 ```
 
-`encode` returns L2-normalised vectors quantised to 6 decimals — that
+`encode` returns L2-normalised vectors quantised to 6 decimals, that
 quantisation *is* the archival unit (see
 [docs/DETERMINISM.md](docs/DETERMINISM.md)); pass `decimals=None` for the raw
 float64.
 
 Two runnable scripts:
 
-* [`examples/quickstart.py`](examples/quickstart.py) — load the frozen model,
+* [`examples/quickstart.py`](examples/quickstart.py), load the frozen model,
   embed new texts, retrieve from the archive, verify reproducibility.
-* [`examples/fit_from_pairs.py`](examples/fit_from_pairs.py) — a complete
+* [`examples/fit_from_pairs.py`](examples/fit_from_pairs.py), a complete
   end-to-end run on synthetic pairs: fit → evaluate → freeze → reload → replay,
   with no external data or network access.
-* [`examples/build_tiny_fixture.py`](examples/build_tiny_fixture.py) — how the
+* [`examples/build_tiny_fixture.py`](examples/build_tiny_fixture.py), how the
   test fixture in `tests/data/` was built from a teacher dataset.
 
 ## Measured fidelity
 
 All numbers below are transcribed from `wyniki/v3/metryki.json` and
 `wyniki/krzywa_uczenia_T0.csv` of the study that accompanies this package (the
-research outputs themselves are not part of the repository — see
+research outputs themselves are not part of the repository, see
 [Repository layout](#repository-layout)).
 
 Setup: teacher `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`,
@@ -209,16 +209,16 @@ chosen, and **T0**, a fresh test set used once. T0 is the column to read.
 | Metric (T0, 1200 fresh texts) | `hybrid_z` | `ridge` only |
 |---|---|---|
 | cosine to the teacher vector, median | **0.8121** | 0.7986 |
-| cosine after removing the mean vector, median | 0.7727 | — |
-| R² (fraction of variance explained) | **0.5348** | — |
+| cosine after removing the mean vector, median | 0.7727 |, |
+| R² (fraction of variance explained) | **0.5348** |, |
 | Spearman rho of pairwise similarities (all pairs) | **0.8075** [0.7941, 0.8204] | 0.7808 |
-| Spearman rho per query, median | 0.7967 | — |
+| Spearman rho per query, median | 0.7967 |, |
 | recall@10 (shared nearest neighbours) | **0.4402** | 0.4217 |
-| NDCG@10 (relevance = teacher cosine) | 0.8698 | — |
-| Pearson r of pairwise similarities | — | 0.8136 |
-| MAE of the reconstructed cosine | — | 0.1357 |
-| cosine 5th / 95th percentile | — | 0.6246 / 0.9116 |
-| cosine minimum | — | 0.4121 |
+| NDCG@10 (relevance = teacher cosine) | 0.8698 |, |
+| Pearson r of pairwise similarities |, | 0.8136 |
+| MAE of the reconstructed cosine |, | 0.1357 |
+| cosine 5th / 95th percentile |, | 0.6246 / 0.9116 |
+| cosine minimum |, | 0.4121 |
 
 Detection of *related pairs*, i.e. asking the surrogate to decide whether two
 texts are similar according to the teacher:
@@ -229,7 +229,7 @@ texts are similar according to the teacher:
 | > 0.8 | 0.030 % | 0.3413 | 0.3488 |
 
 The 95 % confidence interval for global rho comes from a bootstrap over
-**texts** (not pairs — pairs are not independent). On the validation set the
+**texts** (not pairs, pairs are not independent). On the validation set the
 same configuration gives rho = 0.8050, recall@10 = 0.4298, median cosine
 0.8008, R² = 0.5215, so the fresh-test numbers are not an artefact of
 selection. The number of neighbours was chosen on validation
@@ -262,7 +262,7 @@ is set by the feature space, not by the amount of supervision; a note in
 `docs/METHOD.md` records what an alternative feature space buys.
 
 > Note on provenance: earlier drafts quoted `1 − rho = 0.513 · N^(−0.090)`.
-> That pair does reproduce from `wyniki/krzywa_uczenia_T0.csv` — but from the
+> That pair does reproduce from `wyniki/krzywa_uczenia_T0.csv`: but from the
 > three points ending at N = 25 622, i.e. before the 43 093-pair run existed.
 > Refitted with that point included, the exponent moves from −0.090 to −0.110
 > (−0.114 over all five points) and the extrapolations tighten: rho = 0.85 at
@@ -308,8 +308,8 @@ layout and additional dependencies (`pandas`, `scikit-learn`, `matplotlib`,
 
 **Legacy name.** The package was called `klon` before publication. `import klon`
 still works, emits a `DeprecationWarning` and forwards to `embsurrogate`, so
-previously frozen models and old scripts — including
-`python -m klon.replay_check` — keep running unchanged. Strings stored *inside*
+previously frozen models and old scripts, including
+`python -m klon.replay_check`: keep running unchanged. Strings stored *inside*
 model files (`klon-features-2`, `klon-surogat-2` and the manifest keys) were
 deliberately **not** renamed: they are data, and changing them would invalidate
 existing archives.
@@ -351,7 +351,7 @@ docs/REPRODUCIBILITY.md  how to rebuild every artefact and every number
 ```
 
 Deliberately **not** in the repository: corpora and teacher vectors (`data/`),
-full-size frozen models (`model/`, 330–560 MB each) and experiment outputs
+full-size frozen models (`model/`, 330 to 560 MB each) and experiment outputs
 (`wyniki/`). They are research data, not software; keeping them out is what
 holds the repository under 20 MB. `.gitignore` encodes this rule, with an
 exception for the small fixture under `tests/data/`.
@@ -385,11 +385,11 @@ Which of the four situations you are in decides almost everything about how this
 ## What `exact` means
 
 A record found in the archive is returned **exactly at the archival precision
-the manifest states** — six decimals, the unit the vectors are stored in as
+the manifest states**: six decimals, the unit the vectors are stored in as
 `int32` and the unit the SHA-256 digests cover. That is a reproduction of the
 canonical archival representation, not of the original `float32` bits of the
 teacher's output, which the deposit does not keep. For everything this package
-is for — ranking, similarity, screening order — the two are indistinguishable,
+is for, ranking, similarity, screening order, the two are indistinguishable,
 but the distinction belongs in the record, so `verify` checks the former and
 never claims the latter. A record not found is marked `surrogate`, with a second
 column naming the route that produced it.
@@ -401,7 +401,7 @@ given text, the vector quantised to 6 decimals is the same on every
 IEEE-754 machine.* The suite (`pytest -q`, 63 tests) covers:
 
 * feature determinism within one process and across two processes;
-* independence from `PYTHONHASHSEED` (0 and 12345) — hashing is SHA-256, so the
+* independence from `PYTHONHASHSEED` (0 and 12345); hashing is SHA-256, so the
   interpreter's randomised `hash()` never enters;
 * equality of the scipy and numpy feature paths, bit for bit;
 * neighbour **tie resolution**: an artificial case with exactly equal
@@ -422,7 +422,7 @@ rather than a self-check.
 
 What is *guaranteed* versus merely *measured* is spelled out in
 [docs/DETERMINISM.md](docs/DETERMINISM.md). In short: quantisation to 6
-decimals does not by itself prove cross-platform equality — it lowers the
+decimals does not by itself prove cross-platform equality, it lowers the
 probability of a mismatch, and the margin to the nearest rounding boundary is
 what bounds the risk (measured 1.23e-12 against a path difference of 1.14e-13,
 an 11-fold margin, on the 25 622-pair model). The guarantee comes from the
@@ -448,7 +448,7 @@ Read this section before using the package for anything.
    *surrogate* vector, including for training texts, so calling it on an
    archived text throws away exact information for an approximation.
 4. **Only half the variance is explained** (R² = 0.53), and the median cosine is
-   inflated by a common component shared by all sentence embeddings — after
+   inflated by a common component shared by all sentence embeddings, after
    removing the mean vector it falls to 0.77. A trivial baseline that returns
    the mean training vector already reaches ≈ 0.35.
 5. **recall@10 ≈ 0.44**: fewer than half of the teacher's ten nearest
@@ -456,7 +456,7 @@ Read this section before using the package for anything.
 6. **More data will not fix this, and the ceiling is route-specific.** The
    exponent ≈ −0.11 describes the **n-gram route**: the limit there is the
    feature space, not the number of pairs. The encoder route does not follow
-   that law at all — one encoder scores the same at 43 093 pairs as at 8 000,
+   that law at all, one encoder scores the same at 43 093 pairs as at 8 000,
    while adding a *second* encoder raises rho by 0.019 and R² by 0.068 at no
    extra data. On that route the binding constraint is how much the query-side
    description knows about the text (`wyniki/wzmocnienie.csv`).
@@ -499,4 +499,4 @@ Machine-readable metadata: [`CITATION.cff`](CITATION.cff) (same placeholders).
 
 ## License
 
-MIT — see [`LICENSE.txt`](LICENSE.txt). Copyright (c) 2026 Sebastian Matysik.
+MIT, see [`LICENSE.txt`](LICENSE.txt). Copyright (c) 2026 Sebastian Matysik.

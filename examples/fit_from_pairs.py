@@ -5,7 +5,7 @@
 Needs scipy (fitting) but no teacher model and no network: the "teacher" here is
 a fixed random projection of a bag-of-characters representation, which is enough
 to exercise the whole pipeline. The fidelity numbers printed by this script are
-therefore about a synthetic teacher and say nothing about the real one — see the
+therefore about a synthetic teacher and say nothing about the real one, see the
 README for measured fidelity against a sentence encoder.
 
 The point of the example is the *shape* of a real run:
@@ -40,7 +40,7 @@ def synthetic_pairs(n: int, dim: int = 64, seed: int = 0):
     """Texts from a small vocabulary, 'teacher' = mean of random word vectors.
 
     The teacher must be a function that the surrogate can plausibly learn AND
-    one that actually varies between texts — otherwise every fidelity number
+    one that actually varies between texts, otherwise every fidelity number
     degenerates. A bag-of-words embedding satisfies both: texts sharing words
     are similar, texts sharing none are not, and words are visible to a
     character-n-gram feature map.

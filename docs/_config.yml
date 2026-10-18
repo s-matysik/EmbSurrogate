@@ -1,0 +1,19 @@
+# GitHub Pages serves this folder. Minimal on purpose: the documentation is
+# markdown that must stay readable in the repository itself, so nothing here
+# changes the source files -- the theme only wraps them for the web.
+title: embsurrogate
+description: >-
+  A verifiable, text-free deposit that keeps the embedding step of a literature
+  selection reproducible after the model is gone.
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+show_downloads: false
+exclude:
+  - SHA256SUMS.txt
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default

@@ -224,7 +224,7 @@ def build(texts_path: pathlib.Path, vectors_path: pathlib.Path,
     ids, texts = read_texts(texts_path)
     Y = np.load(vectors_path).astype(np.float64)
     if len(Y) != len(texts):
-        raise SystemExit(f"{len(texts)} texts but {len(Y)} vectors — "
+        raise SystemExit(f"{len(texts)} texts but {len(Y)} vectors, "
                          "the archive must be one vector per text")
     nrm = np.linalg.norm(Y, axis=1)
     if not np.allclose(nrm, 1.0, atol=1e-3):

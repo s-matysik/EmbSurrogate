@@ -8,7 +8,7 @@ Saves:
     najlepszy.json       winning configuration + its metrics
     krzywa_uczenia.csv   fidelity as a function of the number of training pairs
     sufit.csv            (with --ceiling) reference: features from another
-                         neural model instead of n-grams — shows how much is
+                         neural model instead of n-grams, shows how much is
                          lost by the feature space itself, and how much by the
                          regression method
 

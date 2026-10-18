@@ -30,7 +30,7 @@ DECIMALS = 6
 @pytest.fixture(scope="session")
 def model_path() -> pathlib.Path:
     if not MODEL.exists():
-        pytest.skip(f"{MODEL} missing — build it with examples/build_tiny_fixture.py")
+        pytest.skip(f"{MODEL} missing, build it with examples/build_tiny_fixture.py")
     return MODEL
 
 

@@ -1,4 +1,4 @@
-"""Pure surrogate mathematics — numpy only.
+"""Pure surrogate mathematics, numpy only.
 
 This module is deliberately cut off from scipy, sentence-transformers and anything
 that might disappear or change behaviour. Inference from the frozen model
@@ -11,10 +11,10 @@ import numpy as np
 
 METHODS = ("knn1", "nw", "loess", "ridge", "rbf", "hybrid", "hybrid_z")
 
-# Note on `hybrid_z` — this is the variant that won after diagnostics from round 2.
+# Note on `hybrid_z`: this is the variant that won after diagnostics from round 2.
 # Residual correction looks for neighbours NOT in n-gram space (where the
 # typical similarity between two unrelated texts is 0.2-0.3, so "neighbourhood"
-# is illusory), but in the OUTPUT space — using the vector from the stage-I
+# is illusory), but in the OUTPUT space: using the vector from the stage-I
 # regression, where neighbours have cos 0.6-0.8. Training coordinates must be
 # the LOO prediction (y_i - e_i), not the in-sample prediction: at small
 # lambda the latter is nearly equal to y_i, which is not the case on the test
@@ -34,7 +34,7 @@ def tricube(u: np.ndarray) -> np.ndarray:
 
     Powers computed by multiplication, not the `**` operator: for exponent 3 numpy calls
     `pow` from libm, and `pow` is NOT covered by the exact-rounding requirement
-    in IEEE-754 — two math libraries can give results differing by 1 ulp.
+    in IEEE-754, two math libraries can give results differing by 1 ulp.
     Multiplication is rounded exactly, so this version gives the same bit
     on every IEEE-754-compliant platform.
     """
@@ -52,7 +52,7 @@ def csr_matvec_numpy(
     n_buckets: int,
     buf: np.ndarray | None = None,
 ) -> np.ndarray:
-    """K_* = X_train @ q, purely on numpy (without scipy) — archival path.
+    """K_* = X_train @ q, purely on numpy (without scipy), archival path.
 
     The buffer is cleared only at the affected positions, so the cost does
     not depend on the number of buckets.
@@ -75,12 +75,12 @@ def csr_matvec_numpy(
 # K  (N x N)  train-train similarity,
 # Ks (M x N)  query-train similarity,
 # and the target matrix Ytr (N x d). Thanks to this, the same function handles
-# the `Surrogate` class and the method comparison in `run_experiment` — there are no two
+# the `Surrogate` class and the method comparison in `run_experiment`: there are no two
 # implementations that could diverge.
 
 
 def solve_ridge_loo_f32(G32: np.ndarray, Ytr: np.ndarray, lam: float):
-    """alpha, diag(G^-1) and LOO prediction for large N — without a second copy of the matrix.
+    """alpha, diag(G^-1) and LOO prediction for large N, without a second copy of the matrix.
 
     Why float32 and why this gymnastics: for N = 43,000 the Gram matrix in float64
     is 14.8 GB, and `np.linalg.inv` needs a second one just like it. In float32
@@ -91,7 +91,7 @@ def solve_ridge_loo_f32(G32: np.ndarray, Ytr: np.ndarray, lam: float):
     G = K + lambda*N*I, and with lambda*N of order unity the conditioning is
     ~10^2-10^3, i.e. the float32 relative error (1e-7) gives ~1e-4 on alpha.
     The archival contract is not affected by this: alpha is FROZEN AS DATA, and
-    the inference path computes in float64 and quantizes to 6 places — training
+    the inference path computes in float64 and quantizes to 6 places, training
     precision affects WHICH model we save, not its reproducibility.
 
     G32 is destroyed (overwritten by the decomposition, then by the triangular inverse).
@@ -106,7 +106,7 @@ def solve_ridge_loo_f32(G32: np.ndarray, Ytr: np.ndarray, lam: float):
     if info != 0:
         raise RuntimeError(f"strtri info={info}")
     # cho_factor/strtri leave garbage (input residuals) in the UNUSED triangle,
-    # not zeros — summing over the full column would include them together with
+    # not zeros, summing over the full column would include them together with
     # the proper terms. We zero them in place, block by block, without copying
     # the matrix.
     B = 2048
@@ -177,7 +177,7 @@ def predict_dual(st: dict, Ks: np.ndarray) -> np.ndarray:
 
 
 def _solve_ridge(K: np.ndarray, Y: np.ndarray, lam: float) -> np.ndarray:
-    """alpha = (K + lam*N*I)^-1 Y — closed-form solution, via Cholesky."""
+    """alpha = (K + lam*N*I)^-1 Y, closed-form solution, via Cholesky."""
     n = K.shape[0]
     A = K + (lam * n) * np.eye(n)
     L = np.linalg.cholesky(A)
@@ -191,7 +191,7 @@ def _rbf(K: np.ndarray, gamma: float) -> np.ndarray:
 
 
 def _kernel_coords(K: np.ndarray, rank: int) -> tuple[np.ndarray, np.ndarray]:
-    """Kernel-PCA coordinates (eigendecomposition of K) — basis of local regression.
+    """Kernel-PCA coordinates (eigendecomposition of K), basis of local regression.
 
     For a query we use the Nyström extension: z_* = k_*^T U Lambda^-1/2.
     eigh on a symmetric matrix is deterministic with respect to the order
@@ -220,7 +220,7 @@ def _local(
     """Local regression: degree 0 = Nadaraya-Watson, degree 1 = LOESS.
 
     The neighbourhood is determined by the k largest cosines. Distance d = 1 - cos,
-    scaled by the neighbourhood radius (adaptive window — like `span` in LOESS),
+    scaled by the neighbourhood radius (adaptive window, like `span` in LOESS),
     tricube weights. For degree 1 the fit proceeds in Nyström coordinates
     centred on the query point, so the intercept IS
     the prediction at that point.
@@ -241,8 +241,7 @@ def _local(
     # occur here: the measured smallest gap between the k-th and (k+1)-th
     # neighbour is 2e-16, and out of 1200 queries 44 had a different ORDER,
     # and 2 a different SET of neighbours than the reference implementation.
-    # A different set is a different function, not a different rounding error —
-    # i.e. a broken archival contract. Ordering key: (-similarity, training index).
+    # A different set is a different function, not a different rounding error, # i.e. a broken archival contract. Ordering key: (-similarity, training index).
     ar = np.arange(n)
     for i in range(nq):
         nb = np.lexsort((ar, -ks[i]))[:k]

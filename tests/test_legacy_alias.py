@@ -2,7 +2,7 @@
 
 Frozen models and analysis scripts written before the rename refer to
 `klon.features`, `klon.predict` and `python -m klon.replay_check`. The alias
-forwards to `embsurrogate` — the same module objects, so there is no second
+forwards to `embsurrogate`, which is the same module objects, so there is no second
 copy of the feature hash cache or of the numerics.
 """
 

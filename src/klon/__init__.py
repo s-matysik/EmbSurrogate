@@ -12,7 +12,7 @@ for publication; the numerics were not touched. Importing this module emits a
 
 Nothing here re-implements anything. The two modules that carry the numerics
 (``features``, ``dual``) are aliased in ``sys.modules`` eagerly, so every other
-module — however it is reached — uses those exact objects, including their hash
+module, however it is reached, uses those exact objects, including their hash
 cache. The remaining modules resolve lazily through ``__getattr__``, which keeps
 a numpy-only installation from importing the parts that need scipy or pandas,
 and makes ``klon.predict is embsurrogate.predict`` true.

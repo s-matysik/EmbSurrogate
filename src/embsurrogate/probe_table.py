@@ -3,8 +3,7 @@
 Motivation. If we have the right to feed the model arbitrary inputs before it disappears,
 then natural texts are a poor choice: each of them mixes several dozen
 words and we end up with one equation for many unknowns. By giving the model
-a SINGLE WORD we get directly its image in the output space —
-i.e. a row of the static table. A set of N single-word probes gives a system
+a SINGLE WORD we get directly its image in the output space, i.e. a row of the static table. A set of N single-word probes gives a system
 with an identity matrix instead of a dense one.
 
 Hence the two-stage construction of the surrogate:
@@ -16,7 +15,7 @@ Hence the two-stage construction of the surrogate:
 where the residual is fitted with kernel regression on pairs from an ordinary
 corpus. Step 2 corresponds to what static distillates of sentence
 models do (Model2Vec and related ones), with the difference that here we do not look
-inside the model — everything comes from input/output pairs.
+inside the model, everything comes from input/output pairs.
 
     python3 -m klon.probe_table data/ds_multi/meta.jsonl data/sondy.jsonl --top 20000"""
 
@@ -43,7 +42,7 @@ def vocabulary(texts, top: int = 20000, min_count: int = 2) -> list[tuple[str, i
 
 
 def sif_weights(counts: np.ndarray, a: float = 1e-3) -> np.ndarray:
-    """SIF weights (Arora et al. 2017): a / (a + p(w)) — dampen frequent words."""
+    """SIF weights (Arora et al. 2017): a / (a + p(w)), dampen frequent words."""
     p = counts / counts.sum()
     return a / (a + p)
 

@@ -9,8 +9,7 @@ same order.
     python3 -m klon.teacher_sbert data/korpus.jsonl data/ds_minilm \\
         --model sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 --limit 6000
 
-It also saves model_info.json with the commit (revision) of the model from HuggingFace —
-without pinning the revision, "the same model" can produce different vectors after a year."""
+It also saves model_info.json with the commit (revision) of the model from HuggingFace, without pinning the revision, "the same model" can produce different vectors after a year."""
 
 from __future__ import annotations
 
@@ -82,7 +81,7 @@ def main(argv=None) -> int:
         "max_seq_length": int(getattr(model, "max_seq_length", 0)),
         "encode_seconds": round(dt, 1),
     }
-    try:  # revision from HF cache — without it the model version cannot be pinned
+    try:  # revision from HF cache, without it the model version cannot be pinned
         from huggingface_hub import HfApi
         info["revision"] = HfApi().model_info(args.model).sha
     except Exception as exc:                       # no network / no package

@@ -9,7 +9,7 @@ approximation of it, and this test is what keeps the approximation honest.
 
 The comparison is made on the quantized INTEGERS, so the test has no tolerance
 of its own. It also checks that the difference between the two paths stays an
-order of magnitude below the distance to the nearest rounding boundary — if it
+order of magnitude below the distance to the nearest rounding boundary, if it
 does not, agreement would be luck rather than a property.
 """
 

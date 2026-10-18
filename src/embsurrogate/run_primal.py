@@ -1,9 +1,9 @@
-"""Surrogate for large N — iterative solver, without materializing the Gram matrix.
+"""Surrogate for large N, iterative solver, without materializing the Gram matrix.
 
     python3 -m klon.run_primal data/ds_big3 model/surogat_v3.npz wyniki/v3
 
 Why this way: `run_big.py` holds an N x N matrix. Cholesky decomposition for
-N = 43 000 (7.4 GB in float32) gets killed in this environment — the ceiling lies
+N = 43 000 (7.4 GB in float32) gets killed in this environment, the ceiling lies
 somewhere between 20 and 28 thousand pairs. Here the matrix never gets built:
 conjugate gradients only need the product K v = Phi (Phi^T v), and Phi is sparse
 (~815 nonzeros per text). Memory usage does not depend on N quadratically:
@@ -14,7 +14,7 @@ tol = 1e-3 and 39 for 1e-4, with rho matching the exact value to 5 places.
 
 Coordinates for residual correction (`z`) are computed K times out-of-sample (OOF), because
 in this form there is no closed formula for LOO prediction. Measurement at N = 9600:
-LOO 0.7688; pure teacher vector 0.7573; without correction 0.7516 — OOF is
+LOO 0.7688; pure teacher vector 0.7573; without correction 0.7516, OOF is
 worth the extra system solves."""
 
 from __future__ import annotations

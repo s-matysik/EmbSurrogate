@@ -1,4 +1,4 @@
-"""Inference from a frozen surrogate — dependency: numpy only.
+"""Inference from a frozen surrogate, dependency: numpy only.
 
     python3 -m klon.predict model/surogat.npz --text "umowa najmu lokalu"
     python3 -m klon.predict model/surogat.npz --jsonl data/nowe.jsonl --out V.npy
@@ -12,7 +12,7 @@ to 6 places reduces the risk of divergence between machines, but does not elimin
 the validation vector has 1200 x 384 coordinates, and the expected number of those
 lying closer than eps to the rounding boundary grows linearly with their count
 (measured: 936 coordinates closer than 1e-9). The normative definition of the vector
-is `klon/reference.py` — computation in integer arithmetic, without
+is `klon/reference.py`: computation in integer arithmetic, without
 floating-point summation and without functions outside the IEEE-754 standard. Agreement of this
 path with the reference is checked by `python3 -m klon.replay_check ... --reference`.
 Numbers and the "guaranteed vs measured" distinction: wyniki/kontrakt_wnioski.md."""
@@ -41,7 +41,7 @@ SUPPORTED_FEATURE_VERSIONS = {"klon-features-2", "klon-features-3"}
 
 
 class FrozenSurrogate:
-    """Loaded .npz file — ready for vector computation."""
+    """Loaded .npz file, ready for vector computation."""
 
     def __init__(self, path: pathlib.Path):
         z = np.load(path, allow_pickle=False)
@@ -50,7 +50,7 @@ class FrozenSurrogate:
             raise RuntimeError(
                 f"model built on features {self.spec['feature_version']}, "
                 f"this code implements {sorted(SUPPORTED_FEATURE_VERSIONS)} "
-                f"— results would be inconsistent")
+                f", results would be inconsistent")
         self.cfg = self.spec["cfg"]
         self.cfg["char_ngrams"] = tuple(self.cfg["char_ngrams"])
         self.cfg["word_ngrams"] = tuple(self.cfg["word_ngrams"])
@@ -59,7 +59,7 @@ class FrozenSurrogate:
         if "indptr" in z.files:
             self.indptr, self.indices, self.data = z["indptr"], z["indices"], z["data"]
         else:
-            # features are not stored in the file — we reconstruct them from the texts
+            # features are not stored in the file, we reconstruct them from the texts
             # and
             # verify the checksums recorded at freezing time
             self.indptr, self.indices, self.data = F.csr_arrays(
@@ -72,7 +72,7 @@ class FrozenSurrogate:
                                     ("data", self.data))}
                 if got != exp:
                     raise RuntimeError(
-                        "features reconstructed from texts do not match the model — "
+                        "features reconstructed from texts do not match the model, "
                         "different feature code version or corrupted texts")
         self.ids = unpack_strings(z["ids"])
         self.state = {"method": self.spec["method"], "Y": z["Y"], **self.spec["params"]}
@@ -101,7 +101,7 @@ class FrozenSurrogate:
         if decimals is None:
             return Y
         # Quantization BEFORE the final normalization would be an error: we normalize,
-        # then round — the same as the export of teacher vectors in the repo
+        # then round, the same as the export of teacher vectors in the repo
         return np.round(Y, decimals)
 
 

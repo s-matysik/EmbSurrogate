@@ -53,12 +53,12 @@ class Bundle:
         if fv not in SUPPORTED_FEATURE_VERSIONS:
             raise SystemExit(
                 f"bundle built on features {fv}, this code implements "
-                f"{sorted(SUPPORTED_FEATURE_VERSIONS)} — results would differ")
+                f"{sorted(SUPPORTED_FEATURE_VERSIONS)}, results would differ")
         if verify:
             for name in ("pairs.npz", "surrogate.npz"):
                 got = hashlib.sha256((self.path / name).read_bytes()).hexdigest()
                 if got != self.manifest["sha256"][name]:
-                    raise SystemExit(f"{name} does not match its checksum — "
+                    raise SystemExit(f"{name} does not match its checksum, "
                                      "the bundle is damaged or was modified")
         p = np.load(self.path / "pairs.npz", allow_pickle=False)
         s = np.load(self.path / "surrogate.npz", allow_pickle=False)

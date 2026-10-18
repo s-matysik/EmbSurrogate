@@ -5,7 +5,7 @@ machine, in every year, without any learned tokenizer and without a dictionary
 that would need to be distributed. Therefore:
 
 * feature hashing (hashing trick, Weinberger et al. 2009) computed on SHA-256,
-  and not on Python's built-in hash() — the latter is randomized per process
+  and not on Python's built-in hash(), the latter is randomized per process
   (PYTHONHASHSEED) and is not stable across interpreter versions;
 * the feature sign taken from the last bit of the same hash (signed hashing),
   which cancels the bias resulting from collisions;
@@ -14,7 +14,7 @@ that would need to be distributed. Therefore:
 * L2 normalization at the end, because the linear kernel on such vectors is cosine.
 
 The entire arithmetic is float64, and the only step dependent on summation order
-(tf accumulation) proceeds over sorted keys — see `_ordered_counts`."""
+(tf accumulation) proceeds over sorted keys, see `_ordered_counts`."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from typing import Iterable, Sequence
 
 import numpy as np
 
-# scipy is imported lazily, only in the functions that build sparse matrices — this way
+# scipy is imported lazily, only in the functions that build sparse matrices, this way
 # the inference path (hashed_row + csr_arrays) runs on numpy alone.
 
 # Changing anything below changes the feature space, and therefore the model.
@@ -64,13 +64,13 @@ _WORD_RE = re.compile(r"[^\W_]+", re.UNICODE)
 _SPACE_RE = re.compile(r"\s+")
 _DIGIT_RE = re.compile(r"\d")
 
-# SHA-256 is expensive (~1 us), and n-grams repeat massively — the cache gives
+# SHA-256 is expensive (~1 us), and n-grams repeat massively: the cache gives
 # a several-fold speedup and does not change the result.
 _HASH_CACHE: dict[str, tuple[int, float]] = {}
 
 
 def _hash(feature: str) -> tuple[int, float]:
-    """(position before modulo, sign) — deterministic for a given string."""
+    """(position before modulo, sign), deterministic for a given string."""
     hit = _HASH_CACHE.get(feature)
     if hit is not None:
         return hit
@@ -126,7 +126,7 @@ def raw_features(text: str, cfg: dict | None = None) -> Counter:
 
 
 def _ordered_counts(counts: Counter) -> list[tuple[str, int]]:
-    """Sorted by key — removes the result's dependence on iteration order."""
+    """Sorted by key, removes the result's dependence on iteration order."""
     return sorted(counts.items())
 
 
@@ -169,7 +169,7 @@ def tf_matrix(texts: Sequence[str], cfg: dict | None = None) -> sparse.csr_matri
 
 
 def fit_idf(tf: sparse.csr_matrix, cfg: dict | None = None) -> np.ndarray:
-    """Smoothed idf computed on buckets (not on features) — as in sklearn."""
+    """Smoothed idf computed on buckets (not on features), as in sklearn."""
     n_docs = tf.shape[0]
     df = np.bincount(tf.indices, minlength=tf.shape[1]).astype(np.float64)
     return np.log((1.0 + n_docs) / (1.0 + df)) + 1.0
@@ -203,7 +203,7 @@ def transform(
     """Full path of Phi: texts -> sparse matrix, rows with norm 1.
 
     Computed via `csr_arrays`, i.e. exactly the same code as the
-    inference path without scipy — otherwise the two versions would differ in the last
+    inference path without scipy, otherwise the two versions would differ in the last
     bits (multiplication by the inverse of the norm vs division).
     """
     from scipy import sparse
@@ -247,12 +247,11 @@ def _row_norm(val: np.ndarray, cfg: dict | None = None) -> float:
 def csr_arrays(
     texts: Sequence[str], idf: np.ndarray, cfg: dict | None = None
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """The same as `transform`, but without scipy — returns raw CSR arrays.
+    """The same as `transform`, but without scipy, returns raw CSR arrays.
 
     Legacy path: inference from a frozen model must depend solely
     on numpy, because the fewer dependencies, the greater the chance that in ten years
-    the code will still run. The results of both paths must be identical bit for bit —
-    this is enforced by `replay_check.py`.
+    the code will still run. The results of both paths must be identical bit for bit, this is enforced by `replay_check.py`.
     """
     cfg = cfg or DEFAULT_CONFIG
     indptr = np.zeros(len(texts) + 1, dtype=np.int64)
@@ -272,7 +271,7 @@ def csr_arrays(
 
 
 def config_fingerprint(cfg: dict) -> str:
-    """Configuration checksum — included in the model manifest."""
+    """Configuration checksum, included in the model manifest."""
     payload = FEATURE_VERSION + "|" + "|".join(
         f"{k}={cfg[k]}" for k in sorted(cfg)
     )

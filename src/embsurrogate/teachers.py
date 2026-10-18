@@ -58,7 +58,7 @@ Conclusions that follow from this and that this method is meant to establish:
     KLON_N=4800 KLON_ONLY_DIAG=1 python3 -m klon.teachers   # error decomposition only
 
 Environment variables: KLON_N, KLON_NBOOT, KLON_SUF, KLON_ONLY_DIAG.
-Run as a separate process with OMP_NUM_THREADS=2 — see run_big docstring."""
+Run as a separate process with OMP_NUM_THREADS=2, see run_big docstring."""
 import os
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 import gc, json, pathlib, sys, time

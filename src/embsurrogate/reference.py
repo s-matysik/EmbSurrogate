@@ -6,24 +6,24 @@ PROBLEM THAT THIS MODULE SOLVES
 The measured discrepancies (scipy vs numpy 2.8e-15; raw float64 vs quantized
 5e-7) are an EMPIRICAL argument from one machine, not a guarantee. Floating-point
 addition is not associative, so the sum of 20 million products depends on how
-BLAS split the loop into blocks and threads — a different machine, a different
+BLAS split the loop into blocks and threads, a different machine, a different
 version of OpenBLAS, or a different number of cores may give a different last
 bit. On top of that, two functions on the path are not covered by the IEEE-754
 standard, so they are allowed to differ BETWEEN PLATFORMS by more than rounding:
 
 * `np.log(cnt)` in `features.hashed_row` (value tf = 1 + ln cnt),
-* `u ** 3` in `dual.tricube` — numpy has no fast path for exponent 3,
+* `u ** 3` in `dual.tricube`: numpy has no fast path for exponent 3,
   so it calls `pow()` from libm.
 
 IEEE-754 requires correct rounding only for +, -, *, /, sqrt and fma.
-`log` and `pow` are "recommended", not required — glibc, Apple's libm and MSVC may
+`log` and `pow` are "recommended", not required, glibc, Apple's libm and MSVC may
 legally differ here by 1 ulp.
 
 MECHANISM
 ---------
 The entire path is recomputed using Python's INTEGER ARITHMETIC
 (arbitrary precision, no overflows). Integer addition IS associative,
-so the summation order stops mattering — there is nothing left to ask BLAS about.
+so the summation order stops mattering, there is nothing left to ask BLAS about.
 All divisions are explicit rounding to the nearest integer
 using the "half to even" rule (`_rhe`), and roots are computed by `math.isqrt`
 (the exact integer part of the root, without floating-point approximation).
@@ -32,38 +32,37 @@ Scales (numbers of bits, constants below): the real value x is represented
 by the integer round(2^s * x).
 
   1. text -> NFKC/casefold normalization -> n-grams  (pure Python, no floats)
-  2. tf: TFQ(cnt) = round(2^S_TF * (1 + ln cnt)) — ln computed with the `decimal`
+  2. tf: TFQ(cnt) = round(2^S_TF * (1 + ln cnt)), ln computed with the `decimal`
      module at 60 digits, i.e. CORRECTLY ROUNDED and independent of libm. For cnt=1
      the result is exactly 2^S_TF.
   3. feature sign and bucket: the same operations on SHA-256 as in `features._hash`
-     (integer arithmetic only — this was deterministic and remains so)
-  4. idf: IDFQ[d] = round(2^S_IDF * idf[d]) — `idf` is a frozen float64
+     (integer arithmetic only, this was deterministic and remains so)
+  4. idf: IDFQ[d] = round(2^S_IDF * idf[d]), `idf` is a frozen float64
      array, and multiplying float64 by a power of two together with `rint` are
      exact operations, so this step is bit-identical everywhere
   5. u_d = ACC_d * IDFQ_d, norm = isqrt(sum u_d^2),
      PHI_d = round(2^S1 * u_d / norm)                       [query feature]
   6. training features: XQ_pd = round(2^S1 * data_pd) from the frozen CSR array
-     (its sha256 is in the manifest — it, not the text, is the oracle;
+     (its sha256 is in the manifest, it, not the text, is the oracle;
       agreement of reconstruction from text is measured separately, see report)
   7. KS_j = round(sum_d XQ_jd * PHI_d / 2^S1)                 [kernel, scale 2^S1]
   8. B_c = sum_j KS_j * AQ_jc, AQ = round(2^S2 * alpha)       [scale 2^(S1+S2)]
   9. BN_c = round(2^S3 * B_c / isqrt(sum B^2))                [l2norm(b)]
  10. SIM_j = sum_c BN_c * ZQ_jc                               [scale 2^(S3+S2)]
- 11. neighbourhood: k smallest indices in order (-SIM_j, j) — see below
+ 11. neighbourhood: k smallest indices in order (-SIM_j, j), see below
  12. D_j = 1 - SIM_j, h = D_max * f (f = the exact value of the literal 1.0000001),
      U_j = round(2^S_U * D_j / h) clamped to [0, 2^S_U],
-     W_j = round(2^S_W * (1 - (U_j/2^S_U)^3)^3)   — powers as integer multiplications
-     (S_U is the most sensitive scale on the entire path — see comment by the constant)
+     W_j = round(2^S_W * (1 - (U_j/2^S_U)^3)^3), powers as integer multiplications
+     (S_U is the most sensitive scale on the entire path, see comment by the constant)
  13. KOREKTA_c = round(sum_j W_j * RQ_(nb_j)c / sum_j W_j)
  14. OUT_c = B_c + KOREKTA_c * 2^S1,
-     WYNIK_c = round(10^6 * OUT_c / isqrt(sum OUT^2))
-     — this is an integer; the archival vector is WYNIK_c / 10^6.
+     WYNIK_c = round(10^6 * OUT_c / isqrt(sum OUT^2)), this is an integer; the archival vector is WYNIK_c / 10^6.
 
 TIES IN NEIGHBOUR SORTING
 ----------------------------
 The `hybrid_z` method selects k = 20 neighbours by similarity in the OUTPUT
 space. `np.argpartition` + `np.argsort` have no defined tie-breaking
-behaviour (argpartition uses introselect — order depends on the
+behaviour (argpartition uses introselect, order depends on the
 implementation, and `argsort` is not stable by default). Two processes could
 therefore select a DIFFERENT set of neighbours and get a result differing by much
 more than 1e-6.
@@ -73,16 +72,16 @@ Here the order is defined explicitly and completely:
 
 i.e. descending by similarity, and for identical similarity, ascending by
 training index. Similarities are integers, so "identical"
-means exactly identical — there is no grey zone.
+means exactly identical, there is no grey zone.
 
 WHERE TO FIND THE NUMBERS
 ------------------
-This module by itself proves nothing — the choice of scales (S1, S2, S3) and agreement
+This module by itself proves nothing, the choice of scales (S1, S2, S3) and agreement
 with the float64 path are the RESULT OF MEASUREMENT, not an assumption. The measurement is done by the script
 `zmierz_kontrakt.py`; the results (maximum difference, number of texts non-matching after
 quantization, seconds per text for each path, S1 sweep) go into
-wyniki/kontrakt_precyzja.csv, and the conclusions — including the delineation of what is
-guaranteed versus merely measured — into wyniki/kontrakt_wnioski.md."""
+wyniki/kontrakt_precyzja.csv, and the conclusions, including the delineation of what is
+guaranteed versus merely measured, into wyniki/kontrakt_wnioski.md."""
 
 from __future__ import annotations
 
@@ -104,7 +103,7 @@ S_IDF = 48       # idf array
 S1 = 48          # normalized features (query and training) and kernel
 S2 = 48          # frozen alpha, R, z coefficients
 S3 = 48          # normalized 1st-degree vector (input to k-NN)
-# Tricube kernel scales — NOT cosmetic. At s_u = 30 the relative weight error
+# Tricube kernel scales, NOT cosmetic. At s_u = 30 the relative weight error
 # is ~3e-9, and the weight enters the weighted average of residuals, so the
 # vector came out ~5e-10 off the exact value. That was enough for 10 of 1200
 # validation texts to get a different sixth digit (wyniki/kontrakt_zrodla_bledu.json:
@@ -134,7 +133,7 @@ def _rhe(num: int, den: int) -> int:
 
 
 def _rhe_pow2(num: np.ndarray, bits: int) -> np.ndarray:
-    """Vectorized `_rhe(num, 2**bits)` on int64 — without creating Python objects."""
+    """Vectorized `_rhe(num, 2**bits)` on int64, without creating Python objects."""
     q = num >> bits
     r = num - (q << bits)               # 0 <= r < 2**bits
     half = np.int64(1) << np.int64(bits - 1)
@@ -143,7 +142,7 @@ def _rhe_pow2(num: np.ndarray, bits: int) -> np.ndarray:
 
 
 def quantize_array(a: np.ndarray, bits: int) -> np.ndarray:
-    """round(2^bits * a) for a float64 array — an EXACT operation.
+    """round(2^bits * a) for a float64 array, an EXACT operation.
 
     Multiplication by a power of two introduces no rounding, and `np.rint` is
     rounding to the nearest integer using the "round half to even" rule
@@ -167,7 +166,7 @@ _TFF_CACHE: dict[int, float] = {}
 
 
 def tf_quant(cnt: int, bits: int = S_TF) -> int:
-    """round(2^bits * (1 + ln cnt)) — independent of libm.
+    """round(2^bits * (1 + ln cnt)), independent of libm.
 
     `Decimal.ln()` is correctly rounded to the specified number of digits
     (norm of the `decimal` module), so at 60 digits the value is ~1e-45 more
@@ -189,7 +188,7 @@ def tf_quant(cnt: int, bits: int = S_TF) -> int:
 
 
 def tf_float(cnt: int) -> float:
-    """1 + ln(cnt) as a correctly rounded float64 (without libm) — for the fsum path."""
+    """1 + ln(cnt) as a correctly rounded float64 (without libm), for the fsum path."""
     hit = _TFF_CACHE.get(cnt)
     if hit is not None:
         return hit
@@ -204,7 +203,7 @@ def tf_float(cnt: int) -> float:
 
 
 def _hash_int(feature: str) -> tuple[int, int]:
-    """(position, sign as +-1) — exactly the same bits as `features._hash`."""
+    """(position, sign as +-1), exactly the same bits as `features._hash`."""
     import hashlib
     h = int.from_bytes(hashlib.sha256(feature.encode("utf-8")).digest()[:8], "big")
     return h >> 1, (1 if (h & 1) else -1)
@@ -239,8 +238,7 @@ def features_fsum(text: str, idf: np.ndarray, cfg: dict
 
     `math.fsum` returns a CORRECTLY ROUNDED sum, which is unique
     regardless of the order of summands (Shewchuk 1997). Products, division and
-    square root are covered by IEEE-754. The only function outside the standard would be the logarithm —
-    here replaced by `tf_float`, so the entire path is fully deterministic.
+    square root are covered by IEEE-754. The only function outside the standard would be the logarithm, here replaced by `tf_float`, so the entire path is fully deterministic.
     """
     nb = cfg["n_buckets"]
     sub = cfg["sublinear_tf"]
@@ -263,16 +261,16 @@ def features_fsum(text: str, idf: np.ndarray, cfg: dict
 class ReferenceModel:
     """Frozen surrogate with three computation paths for the same vector.
 
-    * `encode_int`   — normative, exclusively Python integers, slow;
-    * `encode_int_fast` — the same numbers, but sums computed in numpy such that
+    * `encode_int`: normative, exclusively Python integers, slow;
+    * `encode_int_fast`: the same numbers, but sums computed in numpy such that
       EVERY intermediate result is an exact integer (decomposition into "limbs",
       see `_kstar_int`); the result must be identical to `encode_int`;
-    * `encode_fsum`  — float64 with `math.fsum` (correctly rounded sum).
+    * `encode_fsum`: float64 with `math.fsum` (correctly rounded sum).
 
     The `hybrid_z` method is supported (and `ridge` as its stage I).
     """
 
-    # The widths of "limbs" are NOT fixed — they result from scales. The decomposition
+    # The widths of "limbs" are NOT fixed, they result from scales. The decomposition
     # in the kernel must satisfy s1 = 2*LIMB, because only then can the assembly in
     # `_kstar_int` (division by 2^s1) be done without overflowing int64.
     LIMB16 = 16        # basis of the decomposition in the Ks @ alpha product
@@ -307,7 +305,7 @@ class ReferenceModel:
         self.row_nnz_max = int(np.diff(self.indptr).max())
         bound = int(np.abs(self.Xh).max()) * (1 << self.LIMB) * self.row_nnz_max
         if bound >= 2 ** 62:
-            raise ValueError("limb decomposition would overflow int64 — reduce LIMB")
+            raise ValueError("limb decomposition would overflow int64, reduce LIMB")
         self._limb_bound = bound
 
         # --- frozen coefficients as integers (scale 2^s2)
@@ -333,14 +331,14 @@ class ReferenceModel:
 
     # ----------------------------------------------------------- kernel K_*
     def _kstar_int(self, keys: list[int], phi: list[int]) -> np.ndarray:
-        """KS_j = round(sum_d XQ_jd * PHI_d / 2^s1) — EXACTLY, in int64.
+        """KS_j = round(sum_d XQ_jd * PHI_d / 2^s1), EXACTLY, in int64.
 
         The product of two 48-bit numbers does not fit in int64, so each
         is decomposed into two 24-bit parts (phi = qh*2^24 + ql) and we sum
         the four cross terms separately. Each of these sums is exact (the bound
         is checked in the constructor), and integer addition is associative,
         so `np.add.reduceat` can sum in any order and the result is
-        unambiguous — this is the crux of the difference relative to the float64 path.
+        unambiguous, this is the crux of the difference relative to the float64 path.
         The combination formula assumes s1 = 2*LIMB (see constructor).
         """
         n, L = self.n_train, self.LIMB
@@ -426,7 +424,7 @@ class ReferenceModel:
         return self._finish(b_raw, corr, scales)
 
     def _bn(self, b_raw: list[int]) -> list[int]:
-        """BN = round(2^s3 * b / ||b||) — entry point to the k-NN output space."""
+        """BN = round(2^s3 * b / ||b||), entry point to the k-NN output space."""
         nrm = math.isqrt(sum(x * x for x in b_raw))
         if nrm == 0:
             return [0] * self.dim
@@ -437,7 +435,7 @@ class ReferenceModel:
     def encode_int(self, texts, scales: tuple[int, ...] = (OUT_SCALE,)) -> list:
         """Normative path: everything in Python integers.
 
-        No shortcuts — the kernel is computed row by row, neighbours selected
+        No shortcuts, the kernel is computed row by row, neighbours selected
         by full sorting of 25622 similarities with key (-sim, index).
         """
         outs = [np.zeros((len(texts), self.dim), dtype=object) for _ in scales]
@@ -486,7 +484,7 @@ class ReferenceModel:
         The Ks @ alpha product here is computed by dgemm calls on float64 arrays, which
         store EXCLUSIVELY integers < 2^53. Every multiplication and every
         addition is then exact, so the result does not depend on the summation
-        order in BLAS — this is the same argument as with integers,
+        order in BLAS, this is the same argument as with integers,
         only faster. Assertions guard that the 2^53 limit is not exceeded.
         """
         texts = list(texts)
@@ -570,7 +568,7 @@ class ReferenceModel:
         """Candidate neighbours + selection safety margin.
 
         Selection proceeds on the float64 approximation (error bounded by ~1e-13 in
-        cosine units), but the margin is returned: the difference between the
+cosine units), but the margin is returned: the difference between the
         k-th and CAND-th result. As long as it is orders of magnitude larger than
         the approximation error, no point outside the candidate set can enter
         the exact top twenty. When the margin is smaller than 1e-9,
@@ -584,7 +582,7 @@ class ReferenceModel:
     def _exact_sims(self, bn: list[int], cand: np.ndarray) -> list[tuple[int, int]]:
         """Exact SIM_j for given candidates (int64 limbs + assembly into int)."""
         L = self.LIMB_SIM
-        if not self._sim_int64_ok:          # limbs don't fit — count in Python int
+        if not self._sim_int64_ok:          # limbs don't fit, count in Python int
             cl = cand.tolist()
             return [(sum(b * r for b, r in zip(bn, self.zq[j].tolist())), j) for j in cl]
         bnv = np.asarray(bn, dtype=np.int64)

@@ -3,7 +3,7 @@
 The frozen model contains EVERYTHING needed to reconstruct the vectors:
 training texts, teacher vectors, the idf table, dual coefficients
 and feature configuration. There are no references to the network, to HuggingFace or to the
-teacher model — after freezing the original may disappear.
+teacher model, after freezing the original may disappear.
 
     python3 -m klon.freeze data/ds_multi wyniki/multi/najlepszy.json model/surogat.npz
 
@@ -78,7 +78,7 @@ def build(dataset: pathlib.Path, best: dict, out: pathlib.Path,
     if with_features:
         # The feature matrix is ~110 MB for 5 thousand texts, and it can be
         # reconstructed from the texts in tens of seconds. By default we only save
-        # its checksums — this is sufficient to detect a mismatch in the feature code
+        # its checksums, this is sufficient to detect a mismatch in the feature code
         # version.
         payload.update(indptr=indptr, indices=indices, data=data)
     for key in ("alpha", "R", "U", "lam_eig", "z"):
@@ -130,7 +130,7 @@ def build(dataset: pathlib.Path, best: dict, out: pathlib.Path,
 
 def build_explicit(texts_tr, ids_tr, Ytr, cfg, method, params, state, out,
                    meta_extra=None, with_features=False) -> dict:
-    """Freezing from an explicitly given state — without repeating the split from the file.
+    """Freezing from an explicitly given state, without repeating the split from the file.
 
     `build` reconstructs the train/test split from the seed, which is convenient, but does not
     support the three-way layout (pool / validation / fresh test T0) used

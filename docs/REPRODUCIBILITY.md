@@ -1,3 +1,7 @@
+---
+title: Reproducibility
+---
+
 # Reproducibility
 
 Three separable questions, in increasing order of what they require:
@@ -34,10 +38,10 @@ The second command compares the vectors with the file that was produced on the
 machine where the fixture was built; the third compares the fast numpy path with
 the integer reference implementation. Exit code 1 on any difference. This is the
 same sequence CI runs on `ubuntu-latest` and `macos-latest` with Python 3.11 and
-3.12 — which is what turns "reproducible" from a claim into a test, since the
+3.12, which is what turns "reproducible" from a claim into a test, since the
 fixture was built on macOS/arm64.
 
-Rebuilding the fixture from a teacher dataset (it is deterministic — the pool is
+Rebuilding the fixture from a teacher dataset (it is deterministic, the pool is
 the first `--n` pairs in file order, the control texts are the ones immediately
 after, no random seed is involved):
 
@@ -90,20 +94,20 @@ with `meta.jsonl` (one JSON object per line, fields `id` and `text`) and
 Splits are derived from fixed seeds rather than stored (`run_experiment.split`,
 `run_big.indices`), so they are reproducible from the code: the validation set
 is the 1200 texts of `split(6000, 0.2, seed=0)`, **T0** is indices
-18001–19200 — used once, after all hyper-parameter choices — and the training
+18001 to 19200 (used once, after all hyper-parameter choices), and the training
 pool is the remainder, permuted with seeds 1, 2, 3 in nested order so that the
 learning-curve subsets are prefixes of the same list.
 
 Published reference values, for comparison (`wyniki/v3/metryki.json`,
 `N = 43 093`, `lambda = 1e-4`, `k = 100`): on **T0**, `hybrid_z` gives median
-cosine 0.8121, R² 0.5348, global rho 0.8075 (95 % CI 0.7941–0.8204), per-query
+cosine 0.8121, R² 0.5348, global rho 0.8075 (95 % CI 0.7941 to 0.8204), per-query
 rho 0.7967, recall@10 0.4402, NDCG@10 0.8698; `ridge` alone gives 0.7986 /
 0.7808 / 0.4217. On the validation set: rho 0.8050, recall@10 0.4298.
 
 Expect the *last digits* to move if you use a different BLAS, a different
 thread count or a different scipy: the training solver is float32 and its
 result is a model, not an archived vector. What must not move is the replay of a
-given frozen file — that is question A.
+given frozen file, that is question A.
 
 ## C. Reproduce the study
 
@@ -139,7 +143,7 @@ versions in the job log before running the checks.
   the margin to the rounding boundary is the measure of that risk, and
   `--reference` is what reports it.
 * `unicodedata.unidata_version` is the one input that cannot be recovered from
-  the model file and is currently not recorded in the manifest — note it
+  the model file and is currently not recorded in the manifest, note it
   alongside any model you archive.
 
 Details and measurements: [DETERMINISM.md](DETERMINISM.md).
